@@ -24,14 +24,6 @@ const Home = () => {
 
   return (
     <div className="hero-section">
-      <div className="logo-corner">
-        <img 
-          src="https://customer-assets.emergentagent.com/job_tutorial-platform-1/artifacts/ie5ob0e4_Screenshot_20260227_203005_Messages.jpg" 
-          alt="Amhere4utoday Logo" 
-          className="brand-logo"
-        />
-      </div>
-      
       <div className="hero-content">
         <div className="logo-section">
           <h1 className="logo-text" data-testid="app-logo">Affiliate Pro</h1>
