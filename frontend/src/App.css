@@ -6,7 +6,7 @@
 
 .App {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 50%, #1e3a5f 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
 }
 
 .hero-section {
@@ -46,7 +46,7 @@
 .logo-text {
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #ff9800 0%, #fb8c00 100%);
+  background: linear-gradient(135deg, #fbbf24 0%, #fb923c 50%, #f472b6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -55,23 +55,29 @@
 
 .branding-text {
   font-size: 0.9rem;
-  color: #94a3b8;
+  background: linear-gradient(90deg, #fbbf24 0%, #fb923c 50%, #f472b6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   font-weight: 500;
   letter-spacing: 0.5px;
+  font-style: italic;
 }
 
 .hero-title {
   font-size: 3.5rem;
   font-weight: 800;
-  color: white;
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin-bottom: 1.5rem;
   line-height: 1.2;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .hero-subtitle {
   font-size: 1.25rem;
-  color: #e2e8f0;
+  color: #cbd5e1;
   margin-bottom: 3rem;
   line-height: 1.6;
 }
@@ -81,18 +87,18 @@
   font-size: 1.125rem;
   font-weight: 600;
   color: white;
-  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  background: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
   border: none;
   border-radius: 50px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 10px 30px rgba(255, 152, 0, 0.4);
+  box-shadow: 0 10px 30px rgba(167, 139, 250, 0.4);
 }
 
 .cta-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 15px 40px rgba(255, 152, 0, 0.5);
-  background: linear-gradient(135deg, #fb8c00 0%, #f57c00 100%);
+  box-shadow: 0 15px 40px rgba(167, 139, 250, 0.6);
+  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
 }
 
 .features-grid {
@@ -104,18 +110,20 @@
 }
 
 .feature-card {
-  background: white;
+  background: rgba(30, 27, 75, 0.6);
+  backdrop-filter: blur(10px);
   padding: 2rem;
   border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
-  border: 2px solid transparent;
+  border: 1px solid rgba(167, 139, 250, 0.2);
 }
 
 .feature-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 15px 40px rgba(255, 152, 0, 0.3);
-  border-color: #ff9800;
+  box-shadow: 0 15px 40px rgba(167, 139, 250, 0.4);
+  border-color: rgba(167, 139, 250, 0.6);
+  background: rgba(30, 27, 75, 0.8);
 }
 
 .feature-icon {
@@ -126,19 +134,19 @@
 .feature-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1e293b;
+  color: white;
   margin-bottom: 0.75rem;
 }
 
 .feature-description {
-  color: #64748b;
+  color: #cbd5e1;
   line-height: 1.6;
 }
 
 .generator-container {
   min-height: 100vh;
   padding: 2rem;
-  background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
 }
 
 .generator-header {
@@ -149,11 +157,14 @@
 
 .generator-header .hero-title {
   color: white;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .generator-header .hero-subtitle {
-  color: #e2e8f0;
+  color: #cbd5e1;
 }
 
 .ai-tip-banner {
@@ -325,7 +336,7 @@
 .use-example-button {
   width: 100%;
   padding: 0.625rem;
-  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  background: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
   color: white;
   border: none;
   border-radius: 10px;
@@ -338,7 +349,7 @@
 .use-example-button:hover {
   opacity: 0.9;
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(255, 152, 0, 0.3);
+  box-shadow: 0 5px 15px rgba(167, 139, 250, 0.4);
 }
 
 .suggestions-divider {
@@ -479,7 +490,7 @@
   font-size: 1.125rem;
   font-weight: 600;
   color: white;
-  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  background: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
   border: none;
   border-radius: 15px;
   cursor: pointer;
@@ -489,7 +500,7 @@
 
 .generate-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(255, 152, 0, 0.4);
+  box-shadow: 0 10px 30px rgba(167, 139, 250, 0.5);
 }
 
 .generate-button:disabled {
@@ -542,14 +553,14 @@
 }
 
 .cta-button.secondary {
-  background: white;
-  color: #1e3a5f;
-  border: 2px solid #ff9800;
+  background: transparent;
+  color: white;
+  border: 2px solid;
+  border-image: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%) 1;
 }
 
 .cta-button.secondary:hover {
-  background: #fff3e0;
-  border-color: #f57c00;
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.1) 0%, rgba(244, 114, 182, 0.1) 100%);
 }
 
 /* Templates Page */
@@ -576,12 +587,12 @@
 }
 
 .category-chip:hover {
-  border-color: #ff9800;
-  color: #ff9800;
+  border-color: #a78bfa;
+  color: #a78bfa;
 }
 
 .category-chip.active {
-  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  background: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
   color: white;
   border-color: transparent;
 }
@@ -678,7 +689,7 @@
 .use-template-button {
   width: 100%;
   padding: 0.875rem;
-  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  background: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -693,7 +704,7 @@
 .use-template-button:hover {
   opacity: 0.9;
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(255, 152, 0, 0.3);
+  box-shadow: 0 5px 15px rgba(167, 139, 250, 0.4);
 }
 
 /* Batch Generator */
@@ -971,7 +982,7 @@
 
 .engagement-badge {
   padding: 0.375rem 0.75rem;
-  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  background: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
   color: white;
   border-radius: 50px;
   font-size: 0.875rem;
@@ -1075,7 +1086,7 @@
 .library-container {
   min-height: 100vh;
   padding: 2rem;
-  background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
 }
 
 .library-grid {
@@ -1174,14 +1185,14 @@
 }
 
 .action-button.primary {
-  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  background: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
   color: white;
   border: none;
 }
 
 .action-button.primary:hover {
   opacity: 0.9;
-  box-shadow: 0 5px 15px rgba(255, 152, 0, 0.3);
+  box-shadow: 0 5px 15px rgba(167, 139, 250, 0.4);
 }
 
 .empty-state {
