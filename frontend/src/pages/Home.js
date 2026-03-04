@@ -1,15 +1,41 @@
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Wand2, Video, History, FileText, Layers, Users, BarChart3, Calendar, Plus } from 'lucide-react';
+import { useEffect } from 'react';
 
 const Home = () => {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Create animated particles
+    const createParticle = () => {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      particle.style.left = Math.random() * 100 + '%';
+      particle.style.animationDuration = (Math.random() * 3 + 2) + 's';
+      particle.style.opacity = Math.random() * 0.5 + 0.3;
+      document.querySelector('.hero-section')?.appendChild(particle);
+      
+      setTimeout(() => particle.remove(), 5000);
+    };
+
+    const interval = setInterval(createParticle, 300);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="hero-section">
+      <div className="logo-corner">
+        <img 
+          src="https://customer-assets.emergentagent.com/job_tutorial-platform-1/artifacts/ie5ob0e4_Screenshot_20260227_203005_Messages.jpg" 
+          alt="Amhere4utoday Logo" 
+          className="brand-logo"
+        />
+      </div>
+      
       <div className="hero-content">
         <div className="logo-section">
           <h1 className="logo-text" data-testid="app-logo">Affiliate Pro</h1>
-          <p className="branding-text" data-testid="branding-text">Movius software design</p>
+          <p className="branding-text cursive-font" data-testid="branding-text">Another development by Movius</p>
         </div>
         
         <h2 className="hero-title" data-testid="hero-title">
@@ -24,7 +50,7 @@ const Home = () => {
         
         <div className="cta-buttons">
           <button 
-            className="cta-button" 
+            className="cta-button pulse-glow" 
             data-testid="get-started-button"
             onClick={() => navigate('/generate')}
           >
