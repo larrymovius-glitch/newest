@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Wand2, Video, History, FileText, Layers, Users } from 'lucide-react';
+import { Sparkles, Wand2, Video, History, FileText, Layers, Users, BarChart3, Calendar, Plus } from 'lucide-react';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -93,13 +93,43 @@ const Home = () => {
             </p>
           </div>
           
-          <div className="feature-card" data-testid="feature-social-sharing" style={{ cursor: 'pointer' }}>
+          <div className="feature-card" data-testid="feature-social-sharing" style={{ cursor: 'pointer' }} onClick={() => navigate('/analytics')}>
             <div className="feature-icon">
-              <Video size={40} color="#667eea" />
+              <BarChart3 size={40} color="#667eea" />
             </div>
-            <h3 className="feature-title">Social Sharing</h3>
+            <h3 className="feature-title">Analytics Dashboard</h3>
             <p className="feature-description">
-              Share directly to social media platforms and grow your audience with ease.
+              Track views, engagement, and performance metrics for all your videos.
+            </p>
+          </div>
+          
+          <div className="feature-card" data-testid="feature-template-creator" style={{ cursor: 'pointer' }} onClick={() => navigate('/template-creator')}>
+            <div className="feature-icon">
+              <Plus size={40} color="#667eea" />
+            </div>
+            <h3 className="feature-title">Template Creator</h3>
+            <p className="feature-description">
+              Save your best prompts as custom templates for quick reuse.
+            </p>
+          </div>
+          
+          <div className="feature-card" data-testid="feature-scheduled" style={{ cursor: 'pointer' }} onClick={() => navigate('/scheduled')}>
+            <div className="feature-icon">
+              <Calendar size={40} color="#667eea" />
+            </div>
+            <h3 className="feature-title">Scheduled Posts</h3>
+            <p className="feature-description">
+              Schedule videos to auto-post to social platforms at optimal times.
+            </p>
+          </div>
+          
+          <div className="feature-card" data-testid="feature-team" style={{ cursor: 'pointer' }} onClick={() => navigate('/team')}>
+            <div className="feature-icon">
+              <Users size={40} color="#667eea" />
+            </div>
+            <h3 className="feature-title">Team Collaboration</h3>
+            <p className="feature-description">
+              Invite team members and collaborate on video projects together.
             </p>
           </div>
         </div>

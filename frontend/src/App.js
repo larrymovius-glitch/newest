@@ -6,6 +6,10 @@ import Library from "./pages/Library";
 import Templates from "./pages/Templates";
 import BatchGenerator from "./pages/BatchGenerator";
 import Gallery from "./pages/Gallery";
+import Analytics from "./pages/Analytics";
+import TemplateCreator from "./pages/TemplateCreator";
+import ScheduledPosts from "./pages/ScheduledPosts";
+import Team from "./pages/Team";
 import "./App.css";
 
 function App() {
@@ -20,6 +24,10 @@ function App() {
           <Route path="/templates" element={<Templates />} />
           <Route path="/batch" element={<BatchGenerator />} />
           <Route path="/gallery" element={<Gallery />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/template-creator" element={<TemplateCreator />} />
+          <Route path="/scheduled" element={<ScheduledPosts />} />
+          <Route path="/team" element={<Team />} />
         </Routes>
       </BrowserRouter>
     </div>

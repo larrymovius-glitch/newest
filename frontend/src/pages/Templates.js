@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Play } from 'lucide-react';
+import { ArrowLeft, Sparkles, Play, Plus } from 'lucide-react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -54,6 +54,14 @@ const Templates = () => {
         <p className="hero-subtitle" style={{ fontSize: '1.125rem' }} data-testid="templates-subtitle">
           Start with professionally crafted templates
         </p>
+        <button
+          className="cta-button"
+          style={{ marginTop: '1rem' }}
+          onClick={() => navigate('/template-creator')}
+        >
+          <Plus size={20} style={{ marginRight: '8px' }} />
+          Create Custom Template
+        </button>
       </div>
 
       <div className="template-categories" data-testid="template-categories">
