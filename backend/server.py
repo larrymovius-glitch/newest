@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, UploadFile, File
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -35,6 +35,9 @@ class VideoRequest(BaseModel):
     size: str = "1280x720"
     duration: int = 4
 
+class BatchVideoRequest(BaseModel):
+    videos: List[VideoRequest]
+
 class VideoResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
@@ -46,10 +49,106 @@ class VideoResponse(BaseModel):
     video_url: Optional[str] = None
     created_at: str
     error: Optional[str] = None
+    shared: bool = False
+    likes: int = 0
 
 class VideoHistory(BaseModel):
     model_config = ConfigDict(extra="ignore")
     videos: List[VideoResponse]
+
+class ShareVideoRequest(BaseModel):
+    video_id: str
+    share_to_gallery: bool = True
+
+class Template(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name: str
+    category: str
+    prompt: str
+    thumbnail: str
+    model: str = "sora-2"
+    size: str = "1280x720"
+    duration: int = 4
+
+# Pre-defined templates
+TEMPLATES = [
+    {
+        "id": "tmpl-1",
+        "name": "Product Launch Teaser",
+        "category": "Marketing",
+        "prompt": "Cinematic product reveal with dramatic lighting, slow-motion unboxing, floating product in spotlight, premium feel, luxury branding",
+        "thumbnail": "🎁",
+        "model": "sora-2-pro",
+        "size": "1792x1024",
+        "duration": 8
+    },
+    {
+        "id": "tmpl-2",
+        "name": "Quick Tutorial",
+        "category": "Education",
+        "prompt": "Step-by-step software tutorial, clean interface, pointer highlights, smooth transitions, professional voiceover feel",
+        "thumbnail": "📚",
+        "size": "1280x720",
+        "duration": 12
+    },
+    {
+        "id": "tmpl-3",
+        "name": "Social Media Ad",
+        "category": "Marketing",
+        "prompt": "Vertical mobile-first ad, fast cuts, bold text overlays, attention-grabbing hook, vibrant colors, TikTok style",
+        "thumbnail": "📱",
+        "size": "1024x1792",
+        "duration": 4
+    },
+    {
+        "id": "tmpl-4",
+        "name": "Brand Story",
+        "category": "Branding",
+        "prompt": "Emotional brand narrative, inspiring journey, authentic moments, golden hour aesthetic, motivational music vibe",
+        "thumbnail": "✨",
+        "model": "sora-2-pro",
+        "size": "1792x1024",
+        "duration": 12
+    },
+    {
+        "id": "tmpl-5",
+        "name": "Feature Showcase",
+        "category": "Product",
+        "prompt": "Dynamic feature demonstration, smooth zoom transitions, modern UI elements, tech-forward aesthetic, engaging pacing",
+        "thumbnail": "⚡",
+        "size": "1280x720",
+        "duration": 8
+    },
+    {
+        "id": "tmpl-6",
+        "name": "Testimonial Video",
+        "category": "Social Proof",
+        "prompt": "Authentic customer testimonial, natural setting, genuine emotion, relatable scenario, trustworthy feel",
+        "thumbnail": "💬",
+        "size": "1280x720",
+        "duration": 8
+    },
+    {
+        "id": "tmpl-7",
+        "name": "Explainer Animation",
+        "category": "Education",
+        "prompt": "Animated explainer with colorful icons, smooth transitions, friendly tone, easy to understand concepts",
+        "thumbnail": "🎨",
+        "size": "1280x720",
+        "duration": 12
+    },
+    {
+        "id": "tmpl-8",
+        "name": "Event Highlight",
+        "category": "Events",
+        "prompt": "Energetic event recap, crowd excitement, dynamic camera angles, upbeat atmosphere, celebration vibes",
+        "thumbnail": "🎉",
+        "model": "sora-2-pro",
+        "size": "1792x1024",
+        "duration": 8
+    }
+]
 
 async def generate_video_task(video_id: str, prompt: str, model: str, size: str, duration: int):
     """Background task to generate video"""
@@ -97,6 +196,11 @@ async def generate_video_task(video_id: str, prompt: str, model: str, size: str,
 async def root():
     return {"message": "Affiliate Pro Video Generator API"}
 
+@api_router.get("/templates", response_model=List[Template])
+async def get_templates():
+    """Get all video templates"""
+    return [Template(**t) for t in TEMPLATES]
+
 @api_router.post("/videos/generate", response_model=VideoResponse)
 async def generate_video(request: VideoRequest, background_tasks: BackgroundTasks):
     """Generate a video from text prompt"""
@@ -111,7 +215,9 @@ async def generate_video(request: VideoRequest, background_tasks: BackgroundTask
         "status": "processing",
         "video_url": None,
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "error": None
+        "error": None,
+        "shared": False,
+        "likes": 0
     }
     
     await db.videos.insert_one(video_doc)
@@ -126,6 +232,42 @@ async def generate_video(request: VideoRequest, background_tasks: BackgroundTask
     )
     
     return VideoResponse(**video_doc)
+
+@api_router.post("/videos/batch-generate")
+async def batch_generate_videos(request: BatchVideoRequest, background_tasks: BackgroundTasks):
+    """Generate multiple videos at once"""
+    video_ids = []
+    
+    for video_request in request.videos:
+        video_id = str(uuid.uuid4())
+        
+        video_doc = {
+            "id": video_id,
+            "prompt": video_request.prompt,
+            "model": video_request.model,
+            "size": video_request.size,
+            "duration": video_request.duration,
+            "status": "processing",
+            "video_url": None,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "error": None,
+            "shared": False,
+            "likes": 0
+        }
+        
+        await db.videos.insert_one(video_doc)
+        video_ids.append(video_id)
+        
+        background_tasks.add_task(
+            generate_video_task,
+            video_id,
+            video_request.prompt,
+            video_request.model,
+            video_request.size,
+            video_request.duration
+        )
+    
+    return {"message": f"Batch generation started for {len(video_ids)} videos", "video_ids": video_ids}
 
 @api_router.get("/videos/{video_id}", response_model=VideoResponse)
 async def get_video_status(video_id: str):
@@ -160,6 +302,43 @@ async def get_videos():
     """Get all videos history"""
     videos = await db.videos.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return VideoHistory(videos=[VideoResponse(**v) for v in videos])
+
+@api_router.post("/videos/{video_id}/share")
+async def share_video(video_id: str, request: ShareVideoRequest):
+    """Share video to community gallery"""
+    video = await db.videos.find_one({"id": video_id}, {"_id": 0})
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+    
+    if video["status"] != "completed":
+        raise HTTPException(status_code=400, detail="Video must be completed to share")
+    
+    await db.videos.update_one(
+        {"id": video_id},
+        {"$set": {"shared": request.share_to_gallery}}
+    )
+    
+    return {"message": "Video shared to gallery" if request.share_to_gallery else "Video removed from gallery"}
+
+@api_router.get("/gallery", response_model=VideoHistory)
+async def get_gallery():
+    """Get all shared videos in community gallery"""
+    videos = await db.videos.find({"shared": True, "status": "completed"}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return VideoHistory(videos=[VideoResponse(**v) for v in videos])
+
+@api_router.post("/videos/{video_id}/like")
+async def like_video(video_id: str):
+    """Like a video in the gallery"""
+    result = await db.videos.update_one(
+        {"id": video_id},
+        {"$inc": {"likes": 1}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Video not found")
+    
+    video = await db.videos.find_one({"id": video_id}, {"_id": 0})
+    return {"likes": video.get("likes", 0)}
 
 @api_router.delete("/videos/{video_id}")
 async def delete_video(video_id: str):

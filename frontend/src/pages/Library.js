@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Trash2, Video } from 'lucide-react';
+import { ArrowLeft, Download, Trash2, Video, Share2 } from 'lucide-react';
 import axios from 'axios';
+import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -44,6 +45,27 @@ const Library = () => {
 
   const handleDownload = (videoId) => {
     window.open(`${BACKEND_URL}/api/videos/${videoId}/download`, '_blank');
+  };
+
+  const handleShare = async (videoId, currentlyShared) => {
+    try {
+      await axios.post(`${API}/videos/${videoId}/share`, {
+        share_to_gallery: !currentlyShared
+      });
+      
+      setVideos(videos.map(v => 
+        v.id === videoId ? { ...v, shared: !currentlyShared } : v
+      ));
+      
+      if (!currentlyShared) {
+        toast.success('Video shared to Community Gallery! \ud83c\udf89');
+      } else {
+        toast.success('Video removed from gallery');
+      }
+    } catch (error) {
+      console.error('Error sharing video:', error);
+      toast.error('Failed to share video');
+    }
   };
 
   const formatDate = (dateString) => {
@@ -130,14 +152,24 @@ const Library = () => {
                 
                 <div className="video-card-actions">
                   {video.status === 'completed' && (
-                    <button
-                      className="action-button primary"
-                      data-testid="download-video-button"
-                      onClick={() => handleDownload(video.id)}
-                    >
-                      <Download size={18} style={{ display: 'inline', marginRight: '6px' }} />
-                      Download
-                    </button>
+                    <>
+                      <button
+                        className="action-button primary"
+                        data-testid="download-video-button"
+                        onClick={() => handleDownload(video.id)}
+                      >
+                        <Download size={18} style={{ display: 'inline', marginRight: '6px' }} />
+                        Download
+                      </button>
+                      <button
+                        className={`action-button ${video.shared ? 'shared' : ''}`}
+                        data-testid="share-video-button"
+                        onClick={() => handleShare(video.id, video.shared)}
+                      >
+                        <Share2 size={18} style={{ display: 'inline', marginRight: '6px' }} />
+                        {video.shared ? 'Shared' : 'Share'}
+                      </button>
+                    </>
                   )}
                   <button
                     className="action-button"

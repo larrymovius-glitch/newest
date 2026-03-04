@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Wand2, Video, History } from 'lucide-react';
+import { Sparkles, Wand2, Video, History, FileText, Layers, Users } from 'lucide-react';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -22,17 +22,28 @@ const Home = () => {
           No video editing skills required - just describe what you want.
         </p>
         
-        <button 
-          className="cta-button" 
-          data-testid="get-started-button"
-          onClick={() => navigate('/generate')}
-        >
-          <Sparkles size={20} style={{ display: 'inline', marginRight: '8px' }} />
-          Start Creating
-        </button>
+        <div className="cta-buttons">
+          <button 
+            className="cta-button" 
+            data-testid="get-started-button"
+            onClick={() => navigate('/generate')}
+          >
+            <Sparkles size={20} style={{ display: 'inline', marginRight: '8px' }} />
+            Start Creating
+          </button>
+          
+          <button 
+            className="cta-button secondary" 
+            data-testid="browse-templates-button"
+            onClick={() => navigate('/templates')}
+          >
+            <FileText size={20} style={{ display: 'inline', marginRight: '8px' }} />
+            Browse Templates
+          </button>
+        </div>
         
         <div className="features-grid">
-          <div className="feature-card" data-testid="feature-text-to-video">
+          <div className="feature-card" data-testid="feature-text-to-video" onClick={() => navigate('/generate')} style={{ cursor: 'pointer' }}>
             <div className="feature-icon">
               <Wand2 size={40} color="#667eea" />
             </div>
@@ -42,23 +53,53 @@ const Home = () => {
             </p>
           </div>
           
-          <div className="feature-card" data-testid="feature-multiple-formats">
+          <div className="feature-card" data-testid="feature-templates" onClick={() => navigate('/templates')} style={{ cursor: 'pointer' }}>
             <div className="feature-icon">
-              <Video size={40} color="#667eea" />
+              <FileText size={40} color="#667eea" />
             </div>
-            <h3 className="feature-title">Multiple Formats</h3>
+            <h3 className="feature-title">Pro Templates</h3>
             <p className="feature-description">
-              Choose from various resolutions and durations. Perfect for tutorials or ads.
+              Start with professionally crafted templates for tutorials, ads, and branding videos.
             </p>
           </div>
           
-          <div className="feature-card" data-testid="feature-video-library">
+          <div className="feature-card" data-testid="feature-batch-generation" onClick={() => navigate('/batch')} style={{ cursor: 'pointer' }}>
+            <div className="feature-icon">
+              <Layers size={40} color="#667eea" />
+            </div>
+            <h3 className="feature-title">Batch Generation</h3>
+            <p className="feature-description">
+              Generate multiple videos at once and save time on your content creation workflow.
+            </p>
+          </div>
+          
+          <div className="feature-card" data-testid="feature-video-library" onClick={() => navigate('/library')} style={{ cursor: 'pointer' }}>
             <div className="feature-icon">
               <History size={40} color="#667eea" />
             </div>
             <h3 className="feature-title">Video Library</h3>
             <p className="feature-description">
               Access all your generated videos anytime. Download and use them wherever you need.
+            </p>
+          </div>
+          
+          <div className="feature-card" data-testid="feature-community" onClick={() => navigate('/gallery')} style={{ cursor: 'pointer' }}>
+            <div className="feature-icon">
+              <Users size={40} color="#667eea" />
+            </div>
+            <h3 className="feature-title">Community Gallery</h3>
+            <p className="feature-description">
+              Share your creations and get inspired by videos from the community.
+            </p>
+          </div>
+          
+          <div className="feature-card" data-testid="feature-social-sharing" style={{ cursor: 'pointer' }}>
+            <div className="feature-icon">
+              <Video size={40} color="#667eea" />
+            </div>
+            <h3 className="feature-title">Social Sharing</h3>
+            <p className="feature-description">
+              Share directly to social media platforms and grow your audience with ease.
             </p>
           </div>
         </div>

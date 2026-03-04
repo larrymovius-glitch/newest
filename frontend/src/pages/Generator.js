@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Sparkles, Lightbulb, TrendingUp, Shuffle, Zap } from 'lucide-react';
 import axios from 'axios';
 
@@ -87,6 +87,7 @@ const QUICK_TIPS = [
 
 const Generator = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [prompt, setPrompt] = useState('');
   const [model, setModel] = useState('sora-2');
   const [size, setSize] = useState('1280x720');
@@ -97,6 +98,18 @@ const Generator = () => {
   const [videoUrl, setVideoUrl] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [currentTip, setCurrentTip] = useState(0);
+
+  // Load template if navigated from Templates page
+  useEffect(() => {
+    if (location.state?.template) {
+      const template = location.state.template;
+      setPrompt(template.prompt);
+      setModel(template.model);
+      setSize(template.size);
+      setDuration(template.duration);
+      setShowSuggestions(false);
+    }
+  }, [location]);
 
   const useExample = (examplePrompt) => {
     setPrompt(examplePrompt);
