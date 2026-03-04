@@ -45,7 +45,7 @@ const Home = () => {
         <div className="features-grid">
           <div className="feature-card" data-testid="feature-text-to-video" onClick={() => navigate('/generate')} style={{ cursor: 'pointer' }}>
             <div className="feature-icon">
-              <Wand2 size={40} color="#667eea" />
+              <Wand2 size={40} color="#ff9800" />
             </div>
             <h3 className="feature-title">Text to Video</h3>
             <p className="feature-description">
@@ -55,7 +55,7 @@ const Home = () => {
           
           <div className="feature-card" data-testid="feature-templates" onClick={() => navigate('/templates')} style={{ cursor: 'pointer' }}>
             <div className="feature-icon">
-              <FileText size={40} color="#667eea" />
+              <FileText size={40} color="#ff9800" />
             </div>
             <h3 className="feature-title">Pro Templates</h3>
             <p className="feature-description">
@@ -65,7 +65,7 @@ const Home = () => {
           
           <div className="feature-card" data-testid="feature-batch-generation" onClick={() => navigate('/batch')} style={{ cursor: 'pointer' }}>
             <div className="feature-icon">
-              <Layers size={40} color="#667eea" />
+              <Layers size={40} color="#ff9800" />
             </div>
             <h3 className="feature-title">Batch Generation</h3>
             <p className="feature-description">
@@ -75,7 +75,7 @@ const Home = () => {
           
           <div className="feature-card" data-testid="feature-video-library" onClick={() => navigate('/library')} style={{ cursor: 'pointer' }}>
             <div className="feature-icon">
-              <History size={40} color="#667eea" />
+              <History size={40} color="#ff9800" />
             </div>
             <h3 className="feature-title">Video Library</h3>
             <p className="feature-description">
@@ -85,7 +85,7 @@ const Home = () => {
           
           <div className="feature-card" data-testid="feature-community" onClick={() => navigate('/gallery')} style={{ cursor: 'pointer' }}>
             <div className="feature-icon">
-              <Users size={40} color="#667eea" />
+              <Users size={40} color="#ff9800" />
             </div>
             <h3 className="feature-title">Community Gallery</h3>
             <p className="feature-description">
@@ -95,7 +95,7 @@ const Home = () => {
           
           <div className="feature-card" data-testid="feature-social-sharing" style={{ cursor: 'pointer' }} onClick={() => navigate('/analytics')}>
             <div className="feature-icon">
-              <BarChart3 size={40} color="#667eea" />
+              <BarChart3 size={40} color="#ff9800" />
             </div>
             <h3 className="feature-title">Analytics Dashboard</h3>
             <p className="feature-description">
@@ -105,7 +105,7 @@ const Home = () => {
           
           <div className="feature-card" data-testid="feature-template-creator" style={{ cursor: 'pointer' }} onClick={() => navigate('/template-creator')}>
             <div className="feature-icon">
-              <Plus size={40} color="#667eea" />
+              <Plus size={40} color="#ff9800" />
             </div>
             <h3 className="feature-title">Template Creator</h3>
             <p className="feature-description">
@@ -115,7 +115,7 @@ const Home = () => {
           
           <div className="feature-card" data-testid="feature-scheduled" style={{ cursor: 'pointer' }} onClick={() => navigate('/scheduled')}>
             <div className="feature-icon">
-              <Calendar size={40} color="#667eea" />
+              <Calendar size={40} color="#ff9800" />
             </div>
             <h3 className="feature-title">Scheduled Posts</h3>
             <p className="feature-description">
@@ -125,7 +125,7 @@ const Home = () => {
           
           <div className="feature-card" data-testid="feature-team" style={{ cursor: 'pointer' }} onClick={() => navigate('/team')}>
             <div className="feature-icon">
-              <Users size={40} color="#667eea" />
+              <Users size={40} color="#ff9800" />
             </div>
             <h3 className="feature-title">Team Collaboration</h3>
             <p className="feature-description">
