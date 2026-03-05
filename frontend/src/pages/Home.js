@@ -27,17 +27,19 @@ const Home = () => {
       <div className="hero-content">
         <div className="logo-section">
           <h1 className="logo-text" data-testid="app-logo">Affiliate Pro</h1>
+          <h2 className="subtitle-text" data-testid="subtitle-text">EZ AD Creator</h2>
+          <p className="tech-badge" data-testid="tech-badge">⚡ Powered by Sora 2 AI Technology</p>
           <p className="branding-text cursive-font" data-testid="branding-text">Another development by Movius</p>
         </div>
         
         <h2 className="hero-title" data-testid="hero-title">
-          AI-Powered Video Generation
-          <br />Made Simple
+          Create Affiliate Ads in Seconds
+          <br />with AI-Powered Video
         </h2>
         
         <p className="hero-subtitle" data-testid="hero-subtitle">
-          Create stunning tutorial and promotional videos in seconds with the power of Sora 2.
-          No video editing skills required - just describe what you want.
+          Generate stunning promotional videos for your affiliate campaigns instantly.
+          Powered by cutting-edge Sora 2 AI - no video editing skills required.
         </p>
         
         <div className="cta-buttons">
