@@ -100,6 +100,7 @@ const Generator = () => {
   const [currentTip, setCurrentTip] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
   const timerRef = useRef(null);
+  const [notifyEmail, setNotifyEmail] = useState('');
 
   useEffect(() => {
     if (location.state?.template) {
@@ -187,7 +188,8 @@ const Generator = () => {
         prompt,
         model,
         size,
-        duration: parseInt(duration)
+        duration: parseInt(duration),
+        notify_email: notifyEmail || null
       });
       setVideoId(response.data.id);
       setVideoStatus(response.data.status);
@@ -316,6 +318,19 @@ const Generator = () => {
                 </div>
               </div>
               
+              <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                <label className="form-label" data-testid="email-label">Email Notification (optional)</label>
+                <input
+                  className="form-select"
+                  data-testid="notify-email-input"
+                  type="email"
+                  placeholder="your@email.com — get notified when your video is ready"
+                  value={notifyEmail}
+                  onChange={(e) => setNotifyEmail(e.target.value)}
+                  disabled={isGenerating}
+                />
+              </div>
+
               <button
                 type="submit"
                 className="generate-button"

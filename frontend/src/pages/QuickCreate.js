@@ -34,6 +34,7 @@ const QuickCreate = () => {
   const [prompt, setPrompt] = useState('');
   const [duration, setDuration] = useState(4);
   const [size, setSize] = useState('1280x720');
+  const [notifyEmail, setNotifyEmail] = useState('');
 
   // Generation state
   const [videoId, setVideoId] = useState(null);
@@ -112,7 +113,8 @@ const QuickCreate = () => {
       setStep(3);
       try {
         const res = await axios.post(`${API}/videos/generate`, {
-          prompt, model: 'sora-2', size, duration: parseInt(duration)
+          prompt, model: 'sora-2', size, duration: parseInt(duration),
+          notify_email: notifyEmail || null
         });
         setVideoId(res.data.id);
         setVideoStatus(res.data.status);
@@ -333,6 +335,16 @@ const QuickCreate = () => {
                   <option value="12">12 seconds</option>
                 </select>
               </div>
+            </div>
+
+            <div className="form-group" style={{ marginTop: '0.5rem' }}>
+              <label className="form-label">Email for Notification (optional)</label>
+              <input className="form-select" data-testid="qc-notify-email" type="email"
+                placeholder="your@email.com — we'll let you know when it's ready"
+                value={notifyEmail} onChange={e => setNotifyEmail(e.target.value)} />
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                Get an email the moment your video is done. No waiting around!
+              </p>
             </div>
 
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>

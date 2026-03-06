@@ -12,12 +12,17 @@ import uuid
 from datetime import datetime, timezone, timedelta
 import sys
 import asyncio
+import resend
 
 sys.path.insert(0, os.path.abspath(''))
 from emergentintegrations.llm.openai.video_generation import OpenAIVideoGeneration
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Initialize Resend
+resend.api_key = os.environ.get('RESEND_API_KEY')
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
 
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
@@ -36,6 +41,7 @@ class VideoRequest(BaseModel):
     duration: int = 4
     add_voiceover: bool = False
     voiceover_text: Optional[str] = None
+    notify_email: Optional[str] = None
 
 class BatchVideoRequest(BaseModel):
     videos: List[VideoRequest]
@@ -213,6 +219,55 @@ def _generate_video_sync(video_id: str, prompt: str, model: str, size: str, dura
         return output_path
     return None
 
+async def send_video_notification(email: str, video_id: str, prompt: str, status: str):
+    """Send email notification when video generation completes"""
+    if not email or not resend.api_key:
+        return
+    
+    app_url = os.environ.get('CORS_ORIGINS', 'https://ad-creator-hub-4.preview.emergentagent.com').split(',')[0].strip()
+    if app_url == '*':
+        app_url = 'https://ad-creator-hub-4.preview.emergentagent.com'
+    
+    if status == 'completed':
+        subject = "Your Video is Ready!"
+        html = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: #e2e8f0; padding: 40px; border-radius: 16px;">
+            <h1 style="color: #a78bfa; margin-bottom: 8px;">Your Video is Ready!</h1>
+            <p style="color: #94a3b8; font-size: 16px; margin-bottom: 24px;">Great news — your AI-generated video has finished processing.</p>
+            <div style="background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+                <p style="color: #94a3b8; font-size: 14px; margin: 0 0 4px;">Video Description:</p>
+                <p style="color: #e2e8f0; font-size: 15px; margin: 0;">{prompt[:150]}...</p>
+            </div>
+            <a href="{app_url}/library" style="display: inline-block; background: linear-gradient(135deg, #a78bfa, #f472b6); color: white; text-decoration: none; padding: 14px 32px; border-radius: 50px; font-weight: 600; font-size: 16px;">
+                View & Download Your Video
+            </a>
+            <p style="color: #475569; font-size: 13px; margin-top: 32px;">— Affiliate Pro EZ AD Creator</p>
+        </div>
+        """
+    else:
+        subject = "Video Generation Update"
+        html = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: #e2e8f0; padding: 40px; border-radius: 16px;">
+            <h1 style="color: #f59e0b; margin-bottom: 8px;">Video Generation Update</h1>
+            <p style="color: #94a3b8; font-size: 16px; margin-bottom: 24px;">Unfortunately, your video didn't generate correctly this time. Don't worry — this happens occasionally with AI.</p>
+            <a href="{app_url}/quick-create" style="display: inline-block; background: linear-gradient(135deg, #a78bfa, #f472b6); color: white; text-decoration: none; padding: 14px 32px; border-radius: 50px; font-weight: 600; font-size: 16px;">
+                Try Again
+            </a>
+            <p style="color: #475569; font-size: 13px; margin-top: 32px;">— Affiliate Pro EZ AD Creator</p>
+        </div>
+        """
+    
+    try:
+        await asyncio.to_thread(resend.Emails.send, {
+            "from": SENDER_EMAIL,
+            "to": [email],
+            "subject": subject,
+            "html": html
+        })
+        logging.info(f"Notification email sent to {email} for video {video_id}")
+    except Exception as e:
+        logging.error(f"Failed to send email to {email}: {str(e)}")
+
 async def generate_video_task(video_id: str, prompt: str, model: str, size: str, duration: int):
     """Background task to generate video using thread pool for blocking call"""
     try:
@@ -237,6 +292,11 @@ async def generate_video_task(video_id: str, prompt: str, model: str, size: str,
                 "engagement_rate": 0.0
             })
             logging.info(f"Video {video_id} generated successfully")
+            
+            # Send email notification
+            video_doc = await db.videos.find_one({"id": video_id}, {"_id": 0})
+            if video_doc and video_doc.get("notify_email"):
+                await send_video_notification(video_doc["notify_email"], video_id, prompt, "completed")
         else:
             await db.videos.update_one(
                 {"id": video_id},
@@ -245,6 +305,9 @@ async def generate_video_task(video_id: str, prompt: str, model: str, size: str,
                     "error": "Video generation returned empty result"
                 }}
             )
+            video_doc = await db.videos.find_one({"id": video_id}, {"_id": 0})
+            if video_doc and video_doc.get("notify_email"):
+                await send_video_notification(video_doc["notify_email"], video_id, prompt, "failed")
     except Exception as e:
         logging.error(f"Video generation failed for {video_id}: {str(e)}")
         await db.videos.update_one(
@@ -254,6 +317,9 @@ async def generate_video_task(video_id: str, prompt: str, model: str, size: str,
                 "error": str(e)
             }}
         )
+        video_doc = await db.videos.find_one({"id": video_id}, {"_id": 0})
+        if video_doc and video_doc.get("notify_email"):
+            await send_video_notification(video_doc["notify_email"], video_id, prompt, "failed")
 
 @api_router.get("/")
 async def root():
@@ -265,6 +331,29 @@ async def get_templates():
     custom_templates = await db.templates.find({}, {"_id": 0}).to_list(100)
     all_templates = [Template(**t) for t in TEMPLATES] + [Template(**t) for t in custom_templates]
     return all_templates
+
+class TestEmailRequest(BaseModel):
+    email: str
+
+@api_router.post("/test-email")
+async def test_email(request: TestEmailRequest):
+    """Send a test email to verify Resend is working"""
+    try:
+        result = await asyncio.to_thread(resend.Emails.send, {
+            "from": SENDER_EMAIL,
+            "to": [request.email],
+            "subject": "EZ AD Creator - Email Notifications Active!",
+            "html": """
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: #e2e8f0; padding: 40px; border-radius: 16px;">
+                <h1 style="color: #22c55e; margin-bottom: 8px;">Notifications are set up!</h1>
+                <p style="color: #94a3b8; font-size: 16px;">You'll now receive an email every time one of your videos finishes generating.</p>
+                <p style="color: #475569; font-size: 13px; margin-top: 32px;">— Affiliate Pro EZ AD Creator</p>
+            </div>
+            """
+        })
+        return {"status": "success", "message": f"Test email sent to {request.email}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Email failed: {str(e)}")
 
 @api_router.post("/templates", response_model=Template)
 async def create_custom_template(request: CreateTemplateRequest):
@@ -315,7 +404,8 @@ async def generate_video(request: VideoRequest, background_tasks: BackgroundTask
         "likes": 0,
         "views": 0,
         "shares": 0,
-        "user_id": "default_user"
+        "user_id": "default_user",
+        "notify_email": request.notify_email
     }
     
     await db.videos.insert_one(video_doc)
