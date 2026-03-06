@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Wand2, Video, History, FileText, Layers, Users, BarChart3, Calendar, Plus } from 'lucide-react';
+import { Sparkles, Wand2, Video, History, FileText, Layers, Users, BarChart3, Calendar, Plus, Package, Key } from 'lucide-react';
 import { useEffect } from 'react';
 
 const Home = () => {
@@ -150,6 +150,26 @@ const Home = () => {
             <h3 className="feature-title">Team Collaboration</h3>
             <p className="feature-description">
               Invite team members and collaborate on video projects together.
+            </p>
+          </div>
+          
+          <div className="feature-card" data-testid="feature-products" style={{ cursor: 'pointer' }} onClick={() => navigate('/products')}>
+            <div className="feature-icon">
+              <Package size={40} color="#10b981" />
+            </div>
+            <h3 className="feature-title">Product Catalog</h3>
+            <p className="feature-description">
+              Manage affiliate products and link promo videos. Publish directly to your store.
+            </p>
+          </div>
+          
+          <div className="feature-card" data-testid="feature-integration" style={{ cursor: 'pointer' }} onClick={() => navigate('/integration')}>
+            <div className="feature-icon">
+              <Key size={40} color="#10b981" />
+            </div>
+            <h3 className="feature-title">Connect Your Apps</h3>
+            <p className="feature-description">
+              Link Affiliate Pro and your store so everything works together automatically.
             </p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Depends
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Depends, Header
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -580,6 +580,306 @@ async def delete_video(video_id: str):
         video_path.unlink()
     
     return {"message": "Video deleted successfully"}
+
+# ============================================================
+# INTEGRATION APIs - Cross-App Communication
+# ============================================================
+
+class Product(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name: str
+    description: str
+    affiliate_link: str
+    price: float = 0.0
+    category: str = "General"
+    image_url: Optional[str] = None
+    promo_video_ids: List[str] = []
+    status: str = "draft"
+    store_listed: bool = False
+    created_at: str
+    updated_at: str
+
+class CreateProductRequest(BaseModel):
+    name: str
+    description: str
+    affiliate_link: str
+    price: float = 0.0
+    category: str = "General"
+    image_url: Optional[str] = None
+
+class UpdateProductRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    affiliate_link: Optional[str] = None
+    price: Optional[float] = None
+    category: Optional[str] = None
+    image_url: Optional[str] = None
+    status: Optional[str] = None
+
+class IntegrationKey(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    app_name: str
+    api_key: str
+    permissions: List[str]
+    created_at: str
+
+class CreateKeyRequest(BaseModel):
+    app_name: str
+    permissions: List[str] = ["read_products", "read_videos"]
+
+# --- API Key Verification ---
+async def verify_integration_key(x_api_key: str = Header(None)):
+    if not x_api_key:
+        raise HTTPException(status_code=401, detail="Missing X-API-Key header")
+    key_doc = await db.integration_keys.find_one({"api_key": x_api_key}, {"_id": 0})
+    if not key_doc:
+        raise HTTPException(status_code=403, detail="Invalid API key")
+    return key_doc
+
+# --- Integration Key Management ---
+@api_router.post("/integration/keys", response_model=IntegrationKey)
+async def create_integration_key(request: CreateKeyRequest):
+    """Generate an API key for another app to connect"""
+    key_id = str(uuid.uuid4())
+    api_key = f"ezad-{uuid.uuid4().hex[:24]}"
+    
+    key_doc = {
+        "id": key_id,
+        "app_name": request.app_name,
+        "api_key": api_key,
+        "permissions": request.permissions,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.integration_keys.insert_one(key_doc)
+    return IntegrationKey(**key_doc)
+
+@api_router.get("/integration/keys")
+async def list_integration_keys():
+    """List all integration API keys"""
+    keys = await db.integration_keys.find({}, {"_id": 0}).to_list(50)
+    return {"keys": keys}
+
+@api_router.delete("/integration/keys/{key_id}")
+async def revoke_integration_key(key_id: str):
+    """Revoke an API key"""
+    result = await db.integration_keys.delete_one({"id": key_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Key not found")
+    return {"message": "API key revoked"}
+
+# --- Product Catalog ---
+@api_router.get("/products")
+async def list_products():
+    """List all affiliate products"""
+    products = await db.products.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return {"products": products}
+
+@api_router.post("/products", response_model=Product)
+async def create_product(request: CreateProductRequest):
+    """Add an affiliate product"""
+    product_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    product_doc = {
+        "id": product_id,
+        "name": request.name,
+        "description": request.description,
+        "affiliate_link": request.affiliate_link,
+        "price": request.price,
+        "category": request.category,
+        "image_url": request.image_url,
+        "promo_video_ids": [],
+        "status": "draft",
+        "store_listed": False,
+        "created_at": now,
+        "updated_at": now
+    }
+    await db.products.insert_one(product_doc)
+    return Product(**product_doc)
+
+@api_router.get("/products/{product_id}")
+async def get_product(product_id: str):
+    """Get a single product with its promo videos"""
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Attach video details
+    videos = []
+    for vid_id in product.get("promo_video_ids", []):
+        video = await db.videos.find_one({"id": vid_id, "status": "completed"}, {"_id": 0})
+        if video:
+            videos.append(video)
+    product["promo_videos"] = videos
+    return product
+
+@api_router.put("/products/{product_id}", response_model=Product)
+async def update_product(product_id: str, request: UpdateProductRequest):
+    """Update a product"""
+    updates = {k: v for k, v in request.model_dump().items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+    result = await db.products.update_one({"id": product_id}, {"$set": updates})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    return Product(**product)
+
+@api_router.delete("/products/{product_id}")
+async def delete_product(product_id: str):
+    """Delete a product"""
+    result = await db.products.delete_one({"id": product_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return {"message": "Product deleted"}
+
+@api_router.post("/products/{product_id}/link-video")
+async def link_video_to_product(product_id: str, video_id: str):
+    """Link a generated video to a product"""
+    product = await db.products.find_one({"id": product_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    video = await db.videos.find_one({"id": video_id})
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+    
+    await db.products.update_one(
+        {"id": product_id},
+        {
+            "$addToSet": {"promo_video_ids": video_id},
+            "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}
+        }
+    )
+    return {"message": f"Video linked to product '{product['name']}'"}
+
+@api_router.post("/products/{product_id}/publish")
+async def publish_product_to_store(product_id: str):
+    """Publish a product so the store can display it"""
+    product = await db.products.find_one({"id": product_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    await db.products.update_one(
+        {"id": product_id},
+        {"$set": {
+            "status": "active",
+            "store_listed": True,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    return {"message": f"Product '{product['name']}' published to store"}
+
+@api_router.post("/products/{product_id}/unpublish")
+async def unpublish_product(product_id: str):
+    """Remove a product from the store"""
+    result = await db.products.update_one(
+        {"id": product_id},
+        {"$set": {
+            "store_listed": False,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return {"message": "Product removed from store"}
+
+# --- Store Feed (Public - for amhere4utoday.com to consume) ---
+@api_router.get("/store/feed")
+async def get_store_feed():
+    """Public feed of published products for the store to display.
+    Your store app calls this endpoint to get all active products."""
+    products = await db.products.find(
+        {"store_listed": True, "status": "active"}, {"_id": 0}
+    ).sort("updated_at", -1).to_list(200)
+    
+    # Enrich with video download URLs
+    for product in products:
+        videos = []
+        for vid_id in product.get("promo_video_ids", []):
+            video = await db.videos.find_one({"id": vid_id, "status": "completed"}, {"_id": 0})
+            if video:
+                videos.append({
+                    "id": video["id"],
+                    "prompt": video.get("prompt", ""),
+                    "video_url": video.get("video_url", ""),
+                    "duration": video.get("duration", 4),
+                    "size": video.get("size", "1280x720")
+                })
+        product["promo_videos"] = videos
+    
+    return {"products": products, "count": len(products)}
+
+@api_router.get("/store/feed/{product_id}")
+async def get_store_product(product_id: str):
+    """Get a single published product for the store"""
+    product = await db.products.find_one(
+        {"id": product_id, "store_listed": True}, {"_id": 0}
+    )
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found in store")
+    
+    videos = []
+    for vid_id in product.get("promo_video_ids", []):
+        video = await db.videos.find_one({"id": vid_id, "status": "completed"}, {"_id": 0})
+        if video:
+            videos.append({
+                "id": video["id"],
+                "prompt": video.get("prompt", ""),
+                "video_url": video.get("video_url", ""),
+                "duration": video.get("duration", 4),
+                "size": video.get("size", "1280x720")
+            })
+    product["promo_videos"] = videos
+    return product
+
+# --- External Integration Endpoints (secured with API key) ---
+@api_router.get("/external/products")
+async def external_list_products(key: dict = Depends(verify_integration_key)):
+    """For Affiliate Pro to read products (requires API key)"""
+    if "read_products" not in key.get("permissions", []):
+        raise HTTPException(status_code=403, detail="Missing read_products permission")
+    products = await db.products.find({}, {"_id": 0}).to_list(200)
+    return {"products": products}
+
+@api_router.get("/external/videos")
+async def external_list_videos(key: dict = Depends(verify_integration_key)):
+    """For Affiliate Pro to read videos (requires API key)"""
+    if "read_videos" not in key.get("permissions", []):
+        raise HTTPException(status_code=403, detail="Missing read_videos permission")
+    videos = await db.videos.find({"status": "completed"}, {"_id": 0}).to_list(200)
+    return {"videos": videos}
+
+@api_router.post("/external/products")
+async def external_create_product(request: CreateProductRequest, key: dict = Depends(verify_integration_key)):
+    """For Affiliate Pro to push products (requires API key)"""
+    if "write_products" not in key.get("permissions", []):
+        raise HTTPException(status_code=403, detail="Missing write_products permission")
+    
+    product_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    product_doc = {
+        "id": product_id,
+        "name": request.name,
+        "description": request.description,
+        "affiliate_link": request.affiliate_link,
+        "price": request.price,
+        "category": request.category,
+        "image_url": request.image_url,
+        "promo_video_ids": [],
+        "status": "active",
+        "store_listed": True,
+        "created_at": now,
+        "updated_at": now,
+        "source": key.get("app_name", "external")
+    }
+    await db.products.insert_one(product_doc)
+    return {"id": product_id, "message": "Product created and listed in store"}
 
 app.include_router(api_router)
 

@@ -11,6 +11,8 @@ import Analytics from "./pages/Analytics";
 import TemplateCreator from "./pages/TemplateCreator";
 import ScheduledPosts from "./pages/ScheduledPosts";
 import Team from "./pages/Team";
+import Products from "./pages/Products";
+import Integration from "./pages/Integration";
 import "./App.css";
 
 function App() {
@@ -30,6 +32,8 @@ function App() {
           <Route path="/template-creator" element={<TemplateCreator />} />
           <Route path="/scheduled" element={<ScheduledPosts />} />
           <Route path="/team" element={<Team />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/integration" element={<Integration />} />
         </Routes>
       </BrowserRouter>
     </div>

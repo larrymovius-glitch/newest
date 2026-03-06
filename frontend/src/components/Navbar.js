@@ -1,14 +1,16 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Video, Wand2, FolderOpen, LayoutGrid, Users, BarChart3, Menu, X } from 'lucide-react';
+import { Video, Wand2, FolderOpen, LayoutGrid, Users, BarChart3, Menu, X, Package, Key } from 'lucide-react';
 import { useState } from 'react';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Home', icon: Video },
   { path: '/generate', label: 'Create Video', icon: Wand2 },
   { path: '/library', label: 'My Videos', icon: FolderOpen },
+  { path: '/products', label: 'Products', icon: Package },
   { path: '/templates', label: 'Templates', icon: LayoutGrid },
   { path: '/gallery', label: 'Community', icon: Users },
   { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { path: '/integration', label: 'Connect', icon: Key },
 ];
 
 export const Navbar = () => {
