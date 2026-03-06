@@ -13,6 +13,7 @@ import ScheduledPosts from "./pages/ScheduledPosts";
 import Team from "./pages/Team";
 import Products from "./pages/Products";
 import Integration from "./pages/Integration";
+import QuickCreate from "./pages/QuickCreate";
 import "./App.css";
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
           <Route path="/team" element={<Team />} />
           <Route path="/products" element={<Products />} />
           <Route path="/integration" element={<Integration />} />
+          <Route path="/quick-create" element={<QuickCreate />} />
         </Routes>
       </BrowserRouter>
     </div>

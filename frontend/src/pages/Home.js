@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Wand2, Video, History, FileText, Layers, Users, BarChart3, Calendar, Plus, Package, Key } from 'lucide-react';
+import { Sparkles, Wand2, Video, History, FileText, Layers, Users, BarChart3, Calendar, Plus, Package, Key, Zap } from 'lucide-react';
 import { useEffect } from 'react';
 
 const Home = () => {
@@ -46,10 +46,10 @@ const Home = () => {
           <button 
             className="cta-button pulse-glow" 
             data-testid="get-started-button"
-            onClick={() => navigate('/generate')}
+            onClick={() => navigate('/quick-create')}
           >
-            <Sparkles size={20} style={{ display: 'inline', marginRight: '8px' }} />
-            Start Creating
+            <Zap size={20} style={{ display: 'inline', marginRight: '8px' }} />
+            Quick Create
           </button>
           
           <button 
@@ -63,6 +63,16 @@ const Home = () => {
         </div>
         
         <div className="features-grid">
+          <div className="feature-card" data-testid="feature-quick-create" onClick={() => navigate('/quick-create')} style={{ cursor: 'pointer' }}>
+            <div className="feature-icon">
+              <Zap size={40} color="#f59e0b" />
+            </div>
+            <h3 className="feature-title">Quick Create</h3>
+            <p className="feature-description">
+              Product + Video + Publish in one step. The fastest way to create and list your promo content.
+            </p>
+          </div>
+          
           <div className="feature-card" data-testid="feature-text-to-video" onClick={() => navigate('/generate')} style={{ cursor: 'pointer' }}>
             <div className="feature-icon">
               <Wand2 size={40} color="#a78bfa" />
