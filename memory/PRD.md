@@ -5,17 +5,9 @@ Build an AI Video Generator app called "Affiliate Pro EZ AD Creator" that helps 
 
 ## System Overview
 Three-part turnkey business:
-1. **amhere4utoday.com** - Main store/landing page
-2. **Affiliate Pro** - Existing app for managing affiliate marketing
-3. **EZ AD Creator** (this app) - AI video generator for affiliate product promo videos
-
-## Core Requirements
-- Dark, modern, gradient-heavy aesthetic matching Affiliate Pro branding
-- Sora 2 video generation (text-to-video)
-- Simple, accessible interface for non-technical users
-- Template system for quick video creation
-- Community gallery for sharing videos
-- Analytics dashboard for tracking performance
+1. **amhere4utoday.com** - Main store/landing page (pulls product data from EZ AD Creator)
+2. **Affiliate Pro** - Existing app for managing affiliate marketing (reads/writes products via API key)
+3. **EZ AD Creator** (this app) - AI video generator + Product Hub + Store Feed
 
 ## Architecture
 - **Frontend:** React + Tailwind CSS + Shadcn UI
@@ -25,55 +17,64 @@ Three-part turnkey business:
 
 ## What's Been Implemented
 
-### Backend (server.py)
-- POST /api/videos/generate - Real Sora 2 video generation (async background tasks)
-- POST /api/videos/batch-generate - Batch video generation
-- GET /api/videos - List all videos
-- GET /api/videos/{id} - Get video status
-- GET /api/videos/{id}/download - Download video file
-- POST /api/videos/{id}/share - Share to gallery
-- POST /api/videos/{id}/like - Like a video
-- DELETE /api/videos/{id} - Delete a video
-- GET /api/templates - Get all templates (8 built-in + custom)
-- POST /api/templates - Create custom template
-- DELETE /api/templates/{id} - Delete custom template
-- GET /api/gallery - Community gallery
-- GET /api/analytics/overview - Analytics overview
-- GET /api/videos/{id}/analytics - Per-video analytics
-- POST /api/videos/{id}/schedule - Schedule social posts
-- GET /api/scheduled-posts - List scheduled posts
-- GET /api/team - Team members
-- POST /api/team/invite - Invite team member
+### Core Features
+- Sora 2 AI video generation (LIVE - async background tasks)
+- 8 built-in video templates + custom template creation
+- Video Library with download/share/delete
+- Community Gallery with likes
+- Analytics Dashboard (views, likes, shares, engagement)
+- Batch video generation
+- Team collaboration (invites)
+- Scheduled posts
 
-### Frontend Pages
-- Home (/) - Landing page with feature cards
-- Generator (/generate) - Video creation with progress tracker, AI suggestions
-- Library (/library) - Video library with download/share/delete
-- Templates (/templates) - 8 built-in templates + custom, category filter
-- Batch Generator (/batch) - Create multiple videos at once
-- Gallery (/gallery) - Community shared videos
-- Analytics (/analytics) - Stats cards + performance table
-- Template Creator (/template-creator) - Save custom templates
-- Scheduled Posts (/scheduled) - Manage scheduled posts
-- Team (/team) - Team member management
+### Cross-App Integration (NEW)
+- **Product Catalog** — CRUD for affiliate products, link promo videos
+- **Store Feed API** — PUBLIC endpoint for amhere4utoday.com to consume
+- **External APIs** — Secured with API keys for Affiliate Pro
+- **API Key Management** — Create/revoke keys with granular permissions
+- **Integration Settings UI** — Step-by-step guide + endpoint URLs + key manager
 
-### UX Improvements (This Session)
-- Persistent navbar on all pages (except home)
-- Progress tracker with elapsed time and step indicators during video generation
-- Removed back buttons (navbar handles navigation)
-- Fixed CSS brace issues causing layout breakage
-- Proper 4-column analytics grid
-- 3-column template grid with proper category chip spacing
+### API Endpoints
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | /api/videos/generate | None | Generate video via Sora 2 |
+| GET | /api/videos | None | List all videos |
+| GET | /api/videos/{id} | None | Get video status |
+| GET | /api/videos/{id}/download | None | Download video file |
+| POST | /api/videos/{id}/share | None | Share to gallery |
+| POST | /api/videos/{id}/like | None | Like a video |
+| DELETE | /api/videos/{id} | None | Delete video |
+| GET | /api/templates | None | List templates |
+| POST | /api/templates | None | Create custom template |
+| GET | /api/gallery | None | Community gallery |
+| GET | /api/analytics/overview | None | Analytics stats |
+| GET | /api/products | None | List products |
+| POST | /api/products | None | Create product |
+| PUT | /api/products/{id} | None | Update product |
+| DELETE | /api/products/{id} | None | Delete product |
+| POST | /api/products/{id}/link-video | None | Link video to product |
+| POST | /api/products/{id}/publish | None | Publish to store |
+| POST | /api/products/{id}/unpublish | None | Remove from store |
+| GET | /api/store/feed | PUBLIC | Store reads published products |
+| GET | /api/store/feed/{id} | PUBLIC | Single product for store |
+| POST | /api/integration/keys | None | Create API key |
+| GET | /api/integration/keys | None | List API keys |
+| DELETE | /api/integration/keys/{id} | None | Revoke key |
+| GET | /api/external/products | API Key | Affiliate Pro reads products |
+| POST | /api/external/products | API Key | Affiliate Pro writes products |
+| GET | /api/external/videos | API Key | Affiliate Pro reads videos |
+
+### Frontend Pages (12 total)
+- Home, Generator, Library, Templates, Template Creator
+- Batch Generator, Gallery, Analytics, Scheduled Posts, Team
+- **Products** (NEW), **Integration** (NEW)
 
 ## Known Issues
-- Custom domain `ezads.amhere4utoday.com` has SSL/DNS error (external blocker)
-- Preview URL works fine as temporary solution
+- Custom domain `ezads.amhere4utoday.com` has SSL/DNS error (external)
 
-## Backlog (P1/P2)
-- P1: AI Voice-over (ElevenLabs integration) - UI exists, backend needed
-- P1: Welcome/tutorial video creation
-- P2: User authentication (JWT-based login)
-- P2: Refactor monolithic App.css into component styles
-- P2: Convert hardcoded content to database-backed
-- P2: Connect Stripe/PayPal payment buttons on store
-- P2: Configure automated welcome email with app links
+## Backlog
+- P1: AI Voice-over (ElevenLabs) - UI exists, backend needed
+- P1: Tutorial/welcome video
+- P2: User authentication (JWT)
+- P2: Refactor monolithic App.css
+- P2: Convert hardcoded content to DB-backed
