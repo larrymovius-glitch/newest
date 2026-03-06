@@ -195,22 +195,32 @@ TEMPLATES = [
     }
 ]
 
+def _generate_video_sync(video_id: str, prompt: str, model: str, size: str, duration: int):
+    """Synchronous video generation - runs in thread pool"""
+    video_gen = OpenAIVideoGeneration(api_key=os.environ['EMERGENT_LLM_KEY'])
+    output_path = str(VIDEO_OUTPUT_DIR / f"{video_id}.mp4")
+    
+    video_bytes = video_gen.text_to_video(
+        prompt=prompt,
+        model=model,
+        size=size,
+        duration=duration,
+        max_wait_time=600
+    )
+    
+    if video_bytes:
+        video_gen.save_video(video_bytes, output_path)
+        return output_path
+    return None
+
 async def generate_video_task(video_id: str, prompt: str, model: str, size: str, duration: int):
-    """Background task to generate video"""
+    """Background task to generate video using thread pool for blocking call"""
     try:
-        video_gen = OpenAIVideoGeneration(api_key=os.environ['EMERGENT_LLM_KEY'])
-        output_path = str(VIDEO_OUTPUT_DIR / f"{video_id}.mp4")
-        
-        video_bytes = video_gen.text_to_video(
-            prompt=prompt,
-            model=model,
-            size=size,
-            duration=duration,
-            max_wait_time=900
+        result = await asyncio.to_thread(
+            _generate_video_sync, video_id, prompt, model, size, duration
         )
         
-        if video_bytes:
-            video_gen.save_video(video_bytes, output_path)
+        if result:
             await db.videos.update_one(
                 {"id": video_id},
                 {"$set": {
@@ -218,8 +228,6 @@ async def generate_video_task(video_id: str, prompt: str, model: str, size: str,
                     "video_url": f"/api/videos/{video_id}/download"
                 }}
             )
-            
-            # Initialize analytics
             await db.analytics.insert_one({
                 "video_id": video_id,
                 "views": 0,
@@ -228,7 +236,6 @@ async def generate_video_task(video_id: str, prompt: str, model: str, size: str,
                 "view_history": [],
                 "engagement_rate": 0.0
             })
-            
             logging.info(f"Video {video_id} generated successfully")
         else:
             await db.videos.update_one(

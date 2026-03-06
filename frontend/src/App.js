@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
+import { Navbar } from "./components/Navbar";
 import Home from "./pages/Home";
 import Generator from "./pages/Generator";
 import Library from "./pages/Library";
@@ -17,6 +18,7 @@ function App() {
     <div className="App">
       <Toaster position="top-right" />
       <BrowserRouter>
+        <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/generate" element={<Generator />} />

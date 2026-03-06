@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Lightbulb, TrendingUp, Shuffle, Zap } from 'lucide-react';
+import { Sparkles, Lightbulb, TrendingUp, Shuffle, Zap, Download, FolderOpen, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -98,8 +98,9 @@ const Generator = () => {
   const [videoUrl, setVideoUrl] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [currentTip, setCurrentTip] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const timerRef = useRef(null);
 
-  // Load template if navigated from Templates page
   useEffect(() => {
     if (location.state?.template) {
       const template = location.state.template;
@@ -111,7 +112,7 @@ const Generator = () => {
     }
   }, [location]);
 
-  const useExample = (examplePrompt) => {
+  const applyExample = (examplePrompt) => {
     setPrompt(examplePrompt);
     setShowSuggestions(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -130,6 +131,19 @@ const Generator = () => {
     }, 5000);
     return () => clearInterval(tipInterval);
   }, []);
+
+  // Timer for generation progress
+  useEffect(() => {
+    if (isGenerating) {
+      setElapsedTime(0);
+      timerRef.current = setInterval(() => {
+        setElapsedTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      clearInterval(timerRef.current);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [isGenerating]);
 
   const checkVideoStatus = async (id) => {
     try {
@@ -153,19 +167,16 @@ const Generator = () => {
       const interval = setInterval(() => {
         checkVideoStatus(videoId);
       }, 5000);
-      
       return () => clearInterval(interval);
     }
   }, [videoId, videoStatus]);
 
   const handleGenerate = async (e) => {
     e.preventDefault();
-    
     if (!prompt.trim()) {
       alert('Please enter a video description');
       return;
     }
-    
     setIsGenerating(true);
     setVideoId(null);
     setVideoStatus(null);
@@ -178,10 +189,8 @@ const Generator = () => {
         size,
         duration: parseInt(duration)
       });
-      
-      const video = response.data;
-      setVideoId(video.id);
-      setVideoStatus(video.status);
+      setVideoId(response.data.id);
+      setVideoStatus(response.data.status);
     } catch (error) {
       console.error('Error generating video:', error);
       alert('Failed to start video generation. Please try again.');
@@ -189,23 +198,33 @@ const Generator = () => {
     }
   };
 
-  const handleDownload = () => {
-    if (videoUrl) {
-      window.open(videoUrl, '_blank');
-    }
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const getEstimatedTime = () => {
+    const base = duration === 4 ? 120 : duration === 8 ? 240 : 360;
+    return model === 'sora-2-pro' ? base * 1.5 : base;
+  };
+
+  const getProgressPercent = () => {
+    if (videoStatus === 'completed') return 100;
+    if (videoStatus === 'failed') return 0;
+    const est = getEstimatedTime();
+    return Math.min(95, (elapsedTime / est) * 100);
+  };
+
+  const getProgressStep = () => {
+    if (videoStatus === 'completed') return 3;
+    if (elapsedTime < 10) return 0;
+    if (elapsedTime < getEstimatedTime() * 0.5) return 1;
+    return 2;
   };
 
   return (
     <div className="generator-container">
-      <button 
-        className="back-button" 
-        data-testid="back-button"
-        onClick={() => navigate('/')}
-      >
-        <ArrowLeft size={20} style={{ display: 'inline', marginRight: '8px' }} />
-        Back to Home
-      </button>
-      
       <div className="generator-header">
         <h1 className="hero-title" style={{ fontSize: '2.5rem' }} data-testid="generator-title">
           Create Your Video
@@ -317,39 +336,81 @@ const Generator = () => {
               </button>
             </form>
             
-            {videoStatus && (
-              <div className="status-card" data-testid="status-card">
-                <p className="status-text" data-testid="status-text">
-                  {videoStatus === 'processing' && '🎬 Your video is being generated... This may take a few minutes.'}
-                  {videoStatus === 'completed' && '✨ Your video is ready!'}
-                  {videoStatus === 'failed' && '❌ Video generation failed. Please try again.'}
+            {/* Progress Tracker */}
+            {isGenerating && videoStatus === 'processing' && (
+              <div className="progress-container" data-testid="progress-container">
+                <div className="progress-header">
+                  <span className="progress-title">Creating your video...</span>
+                  <span className="progress-time" data-testid="elapsed-time">{formatTime(elapsedTime)} elapsed</span>
+                </div>
+                <div className="progress-bar-track">
+                  <div className="progress-bar-fill" style={{ width: `${getProgressPercent()}%` }} data-testid="progress-bar" />
+                </div>
+                <div className="progress-steps">
+                  <div className={`progress-step ${getProgressStep() >= 0 ? 'active' : ''} ${getProgressStep() > 0 ? 'done' : ''}`}>
+                    <span className="progress-dot" />
+                    <span>Queued</span>
+                  </div>
+                  <div className={`progress-step ${getProgressStep() >= 1 ? 'active' : ''} ${getProgressStep() > 1 ? 'done' : ''}`}>
+                    <span className="progress-dot" />
+                    <span>Rendering</span>
+                  </div>
+                  <div className={`progress-step ${getProgressStep() >= 2 ? 'active' : ''} ${getProgressStep() > 2 ? 'done' : ''}`}>
+                    <span className="progress-dot" />
+                    <span>Finalizing</span>
+                  </div>
+                  <div className={`progress-step ${getProgressStep() >= 3 ? 'active' : ''}`}>
+                    <span className="progress-dot" />
+                    <span>Complete</span>
+                  </div>
+                </div>
+                <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '1rem', textAlign: 'center' }}>
+                  AI video generation typically takes 2-5 minutes. You can wait here or check your Library later.
+                </p>
+              </div>
+            )}
+
+            {videoStatus === 'failed' && (
+              <div className="status-card" data-testid="status-card" style={{ borderColor: 'rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.05)' }}>
+                <p className="status-text" data-testid="status-text" style={{ color: '#ef4444' }}>
+                  Video generation failed. Please try again with a different description.
                 </p>
               </div>
             )}
             
             {videoUrl && (
               <div className="video-preview" data-testid="video-preview">
+                <div className="status-card" data-testid="status-card" style={{ borderColor: 'rgba(34,197,94,0.3)', background: 'rgba(34,197,94,0.05)', marginBottom: '1rem' }}>
+                  <p className="status-text" style={{ color: '#22c55e', fontWeight: 600 }}>
+                    <CheckCircle2 size={18} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
+                    Your video is ready!
+                  </p>
+                </div>
                 <video
                   className="video-player"
                   data-testid="video-player"
                   controls
                   src={videoUrl}
                 />
-                <button
-                  className="download-button"
-                  data-testid="download-button"
-                  onClick={handleDownload}
-                >
-                  Download Video
-                </button>
-                <button
-                  className="download-button"
-                  data-testid="view-library-button"
-                  style={{ marginLeft: '1rem', background: '#667eea' }}
-                  onClick={() => navigate('/library')}
-                >
-                  View Library
-                </button>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                  <button
+                    className="download-button"
+                    data-testid="download-button"
+                    onClick={() => window.open(videoUrl, '_blank')}
+                  >
+                    <Download size={18} style={{ display: 'inline', marginRight: '6px' }} />
+                    Download Video
+                  </button>
+                  <button
+                    className="download-button"
+                    data-testid="view-library-button"
+                    style={{ background: '#667eea' }}
+                    onClick={() => navigate('/library')}
+                  >
+                    <FolderOpen size={18} style={{ display: 'inline', marginRight: '6px' }} />
+                    View Library
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -377,7 +438,7 @@ const Generator = () => {
                 <button
                   className="use-example-button"
                   data-testid={`use-example-${index}`}
-                  onClick={() => useExample(style.example)}
+                  onClick={() => applyExample(style.example)}
                 >
                   Use This Style
                 </button>
@@ -405,7 +466,7 @@ const Generator = () => {
                       key={exIndex}
                       className="example-chip"
                       data-testid={`example-chip-${index}-${exIndex}`}
-                      onClick={() => useExample(example)}
+                      onClick={() => applyExample(example)}
                     >
                       Example {exIndex + 1}
                     </button>

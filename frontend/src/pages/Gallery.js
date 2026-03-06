@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Heart, Video, TrendingUp, Share2 } from 'lucide-react';
+import { Heart, Video, TrendingUp, Share2 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 
@@ -35,7 +35,7 @@ const Gallery = () => {
       setVideos(videos.map(v => 
         v.id === videoId ? { ...v, likes: response.data.likes } : v
       ));
-      toast.success('Liked! ❤️');
+      toast.success('Liked!');
     } catch (error) {
       console.error('Error liking video:', error);
     }
@@ -67,15 +67,6 @@ const Gallery = () => {
 
   return (
     <div className="library-container">
-      <button 
-        className="back-button" 
-        data-testid="back-button"
-        onClick={() => navigate('/')}
-      >
-        <ArrowLeft size={20} style={{ display: 'inline', marginRight: '8px' }} />
-        Back to Home
-      </button>
-      
       <div className="generator-header">
         <h1 className="hero-title" style={{ fontSize: '2.5rem' }} data-testid="gallery-title">
           <TrendingUp size={40} style={{ display: 'inline', marginRight: '1rem', verticalAlign: 'middle' }} />

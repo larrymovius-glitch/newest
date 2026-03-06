@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Plus, Trash2, Layers } from 'lucide-react';
+import { Sparkles, Plus, Trash2, Layers } from 'lucide-react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -58,15 +58,6 @@ const BatchGenerator = () => {
 
   return (
     <div className="generator-container">
-      <button 
-        className="back-button" 
-        data-testid="back-button"
-        onClick={() => navigate('/')}
-      >
-        <ArrowLeft size={20} style={{ display: 'inline', marginRight: '8px' }} />
-        Back to Home
-      </button>
-      
       <div className="generator-header">
         <h1 className="hero-title" style={{ fontSize: '2.5rem' }} data-testid="batch-title">
           Batch Video Generation

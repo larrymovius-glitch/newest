@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Trash2, Video, Share2 } from 'lucide-react';
+import { Download, Trash2, Video, Share2 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 
@@ -58,7 +58,7 @@ const Library = () => {
       ));
       
       if (!currentlyShared) {
-        toast.success('Video shared to Community Gallery! \ud83c\udf89');
+        toast.success('Video shared to Community Gallery!');
       } else {
         toast.success('Video removed from gallery');
       }
@@ -75,15 +75,6 @@ const Library = () => {
 
   return (
     <div className="library-container">
-      <button 
-        className="back-button" 
-        data-testid="back-button"
-        onClick={() => navigate('/')}
-      >
-        <ArrowLeft size={20} style={{ display: 'inline', marginRight: '8px' }} />
-        Back to Home
-      </button>
-      
       <div className="generator-header">
         <h1 className="hero-title" style={{ fontSize: '2.5rem' }} data-testid="library-title">
           Your Video Library

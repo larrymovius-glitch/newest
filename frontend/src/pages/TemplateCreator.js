@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Save } from 'lucide-react';
+import { Plus, Save } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 
@@ -48,15 +48,6 @@ const TemplateCreator = () => {
 
   return (
     <div className="generator-container">
-      <button 
-        className="back-button" 
-        data-testid="back-button"
-        onClick={() => navigate('/templates')}
-      >
-        <ArrowLeft size={20} style={{ display: 'inline', marginRight: '8px' }} />
-        Back to Templates
-      </button>
-      
       <div className="generator-header">
         <h1 className="hero-title" style={{ fontSize: '2.5rem' }} data-testid="creator-title">
           Create Custom Template

@@ -9,7 +9,7 @@ AI-powered video generation platform for creating stunning tutorial and promotio
 ## 🚀 Quick Links
 
 - **📖 Full Integration Guide**: [INTEGRATION_GUIDE.md](./INTEGRATION_GUIDE.md)
-- **🌐 Live App**: https://tutorial-platform-1.preview.emergentagent.com
+- **🌐 Live App**: https://ad-creator-hub-4.preview.emergentagent.com
 - **🏪 Store**: amhere4utoday.com
 
 ---
@@ -147,7 +147,7 @@ EMERGENT_LLM_KEY=sk-emergent-xxx
 
 ### Frontend (.env)
 ```
-REACT_APP_BACKEND_URL=https://your-app.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://ad-creator-hub-4.preview.emergentagent.com
 ```
 
 ---

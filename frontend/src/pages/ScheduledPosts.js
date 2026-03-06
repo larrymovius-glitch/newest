@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Trash2, Clock } from 'lucide-react';
+import { Calendar, Trash2, Clock } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 
@@ -46,11 +46,6 @@ const ScheduledPosts = () => {
 
   return (
     <div className="library-container">
-      <button className="back-button" onClick={() => navigate('/')}>
-        <ArrowLeft size={20} style={{ marginRight: '8px' }} />
-        Back to Home
-      </button>
-      
       <div className="generator-header">
         <h1 className="hero-title" style={{ fontSize: '2.5rem' }}>
           <Calendar size={40} style={{ display: 'inline', marginRight: '1rem', verticalAlign: 'middle' }} />

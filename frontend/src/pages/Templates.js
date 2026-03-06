@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Play, Plus } from 'lucide-react';
+import { Sparkles, Play, Plus } from 'lucide-react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -32,21 +32,12 @@ const Templates = () => {
     ? templates 
     : templates.filter(t => t.category === selectedCategory);
 
-  const useTemplate = (template) => {
+  const applyTemplate = (template) => {
     navigate('/generate', { state: { template } });
   };
 
   return (
     <div className="library-container">
-      <button 
-        className="back-button" 
-        data-testid="back-button"
-        onClick={() => navigate('/')}
-      >
-        <ArrowLeft size={20} style={{ display: 'inline', marginRight: '8px' }} />
-        Back to Home
-      </button>
-      
       <div className="generator-header">
         <h1 className="hero-title" style={{ fontSize: '2.5rem' }} data-testid="templates-title">
           Video Templates
@@ -105,7 +96,7 @@ const Templates = () => {
                 <button
                   className="use-template-button"
                   data-testid="use-template-button"
-                  onClick={() => useTemplate(template)}
+                  onClick={() => applyTemplate(template)}
                 >
                   <Play size={18} style={{ marginRight: '6px' }} />
                   Use Template

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, TrendingUp, Eye, Heart, Share2, BarChart3 } from 'lucide-react';
+import { TrendingUp, Eye, Heart, Share2, BarChart3 } from 'lucide-react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -39,15 +39,6 @@ const Analytics = () => {
 
   return (
     <div className="library-container">
-      <button 
-        className="back-button" 
-        data-testid="back-button"
-        onClick={() => navigate('/')}
-      >
-        <ArrowLeft size={20} style={{ display: 'inline', marginRight: '8px' }} />
-        Back to Home
-      </button>
-      
       <div className="generator-header">
         <h1 className="hero-title" style={{ fontSize: '2.5rem' }} data-testid="analytics-title">
           <BarChart3 size={40} style={{ display: 'inline', marginRight: '1rem', verticalAlign: 'middle' }} />
