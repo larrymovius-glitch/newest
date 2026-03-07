@@ -173,9 +173,13 @@
 }
 
 .branding-text {
+  font-family: 'Dancing Script', cursive;
   font-size: 1.1rem;
-  color: #94a3b8;
-  font-weight: 400;
+  font-weight: 600;
+  background: linear-gradient(135deg, #fbbf24, #d4a017, #f5c842, #c8941e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   letter-spacing: 0.5px;
 }
 
