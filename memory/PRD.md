@@ -1,55 +1,59 @@
 # Affiliate Pro EZ AD Creator - PRD
 
 ## Original Problem Statement
-Build an AI Video Generator app called "Affiliate Pro EZ AD Creator" that helps people with physical disabilities, single parents earn income from home through affiliate marketing. Uses Sora 2 AI for video creation. Three apps work as a turnkey system.
-
-## System Overview
-1. **amhere4utoday.com** — Store (pulls published products from store feed API)
-2. **Affiliate Pro** — Affiliate marketing management (reads/writes via secured API)
-3. **EZ AD Creator** (this app) — Central hub: AI video + products + store feed + email notifications
+Turnkey business system for people with disabilities and single parents to earn income from home through affiliate marketing. Three apps work together: Store, Affiliate Pro, and EZ AD Creator (AI video generator).
 
 ## Architecture
-- **Frontend:** React + Tailwind CSS + Shadcn UI (14 pages)
-- **Backend:** FastAPI (Python) with MongoDB
-- **Video Gen:** Sora 2 via emergentintegrations (Emergent LLM Key)
-- **Email:** Resend (free tier, transactional notifications)
+- **Frontend:** React + Tailwind + Shadcn UI (17 pages)
+- **Backend:** FastAPI + MongoDB
+- **Video Gen:** Sora 2 (Emergent LLM Key)
+- **Payments:** Stripe (LIVE key)
+- **Email:** Resend
+- **Auth:** JWT + Google OAuth (Emergent Auth)
 - **Preview URL:** https://ad-creator-hub-4.preview.emergentagent.com
 
 ## Implemented Features
 
-### Core Video Creation
-- Sora 2 AI video generation (LIVE, async with thread pool)
-- 8 built-in templates + custom template creation
-- Video Library, Batch generation, Progress tracker
+### Authentication (LIVE)
+- Email/password registration + login (JWT tokens)
+- Google OAuth via Emergent Auth
+- Protected routes (login required for all features)
+- Admin role system
 
-### Quick Create (one-click flow)
-- Step 1: Create/select product → Step 2: Describe video + email → Step 3: Generate → Step 4: Review → Approve & Publish
+### Pricing & Payments (LIVE Stripe)
+- Free: $0 (4 videos/month, basic templates)
+- Pro: $9.99/month (unlimited videos, all features)
+- Lifetime: $19.99 one-time (everything forever)
+- Stripe checkout sessions with payment verification
+- Monthly video limit enforcement
 
-### Email Notifications (NEW)
-- Optional email field on Quick Create and Generator pages
-- Automatic email sent when video completes or fails via Resend
-- Beautiful branded HTML emails with CTA buttons
-- Test email endpoint for verification
+### Admin Dashboard
+- User list with plan management (upgrade/downgrade/cancel)
+- Make/remove admin toggle
+- Delete users
+- Total revenue, user counts, plan distribution stats
+
+### Video Creation (Sora 2 LIVE)
+- Quick Create: Product + Video + Publish in one flow
+- Generator: Advanced video creation with templates & suggestions
+- Progress tracker with elapsed time
+- Batch generation
+- Email notifications when video completes (Resend)
 
 ### Product Catalog & Cross-App Integration
-- Full CRUD for affiliate products, link promo videos
-- Publish/unpublish to store, Store Feed API (PUBLIC)
+- Product CRUD with video linking
+- Store Feed API (PUBLIC) for amhere4utoday.com
 - External APIs (API key secured) for Affiliate Pro
-- API Key management, Integration Settings page
+- Integration Settings page with docs
 
-### Community & Analytics
-- Community Gallery, Analytics Dashboard, Scheduled Posts, Team collaboration
-
-## Frontend Pages (14 total)
-Home, Quick Create, Generator, Library, Products, Templates, Template Creator, Batch Generator, Gallery, Analytics, Scheduled Posts, Team, Integration
+### Pages (17)
+Auth, AuthCallback, Home, Quick Create, Generator, Library, Products, Templates, Template Creator, Batch Generator, Gallery, Analytics, Scheduled Posts, Team, Integration, Pricing, PaymentSuccess, Admin
 
 ## Known Issues
-- Custom domain `ezads.amhere4utoday.com` SSL/DNS error (external)
-- Resend free tier: emails only go to verified addresses in test mode
+- Custom domain `ezads.amhere4utoday.com` SSL/DNS (external)
 
 ## Backlog
+- P1: PayPal integration
 - P1: AI Voice-over (ElevenLabs)
-- P1: Tutorial/welcome video
-- P2: User authentication (JWT)
-- P2: Refactor monolithic App.css
-- P2: Convert hardcoded content to DB-backed
+- P2: Tutorial/welcome video
+- P2: Refactor CSS monolith

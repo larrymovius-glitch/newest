@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -9,15 +9,31 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (token) {
-      axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
-        .then(res => { setUser(res.data); setLoading(false); })
-        .catch(() => { localStorage.removeItem('token'); setToken(null); setUser(null); setLoading(false); });
-    } else {
-      setLoading(false);
+  const checkAuth = useCallback(async () => {
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      try {
+        const res = await axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${storedToken}` } });
+        setUser(res.data);
+        setToken(storedToken);
+      } catch {
+        localStorage.removeItem('token');
+        setToken(null);
+        setUser(null);
+      }
     }
-  }, [token]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    // CRITICAL: If returning from OAuth callback, skip the /me check.
+    // AuthCallback will exchange the session_id and establish the session first.
+    if (window.location.hash?.includes('session_id=')) {
+      setLoading(false);
+      return;
+    }
+    checkAuth();
+  }, [checkAuth]);
 
   const login = async (email, password) => {
     const res = await axios.post(`${API}/auth/login`, { email, password });
@@ -42,9 +58,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const refreshUser = async () => {
-    if (token) {
-      const res = await axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
-      setUser(res.data);
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      try {
+        const res = await axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${storedToken}` } });
+        setUser(res.data);
+        setToken(storedToken);
+      } catch { /* ignore */ }
     }
   };
 

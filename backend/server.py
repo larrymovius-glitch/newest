@@ -1,5 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Depends, Header, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -13,6 +13,7 @@ from datetime import datetime, timezone, timedelta
 import sys
 import asyncio
 import resend
+import httpx
 
 sys.path.insert(0, os.path.abspath(''))
 from emergentintegrations.llm.openai.video_generation import OpenAIVideoGeneration
@@ -196,7 +197,79 @@ async def get_me(user: dict = Depends(get_current_user)):
         "id": user["id"], "email": user["email"], "name": user.get("name", ""),
         "plan": plan, "videos_this_month": user.get("videos_this_month", 0),
         "videos_limit": PLANS[plan]["videos_per_month"],
-        "is_admin": user.get("is_admin", False), "created_at": user.get("created_at", "")
+        "is_admin": user.get("is_admin", False), "created_at": user.get("created_at", ""),
+        "picture": user.get("picture", "")
+    }
+
+# ============================================================
+# GOOGLE OAUTH (Emergent Auth)
+# ============================================================
+class GoogleCallbackRequest(BaseModel):
+    session_id: str
+
+@api_router.post("/auth/google/callback")
+async def google_callback(request: GoogleCallbackRequest):
+    """Exchange Emergent OAuth session_id for a JWT token"""
+    # Call Emergent Auth to get user data
+    async with httpx.AsyncClient() as client_http:
+        response = await client_http.get(
+            "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+            headers={"X-Session-ID": request.session_id}
+        )
+    
+    if response.status_code != 200:
+        raise HTTPException(status_code=401, detail="Invalid Google session")
+    
+    google_data = response.json()
+    email = google_data.get("email", "").lower()
+    name = google_data.get("name", "")
+    picture = google_data.get("picture", "")
+    
+    if not email:
+        raise HTTPException(status_code=400, detail="No email from Google")
+    
+    # Find or create user
+    existing = await db.users.find_one({"email": email}, {"_id": 0})
+    if existing:
+        # Update name/picture if changed
+        await db.users.update_one({"email": email}, {"$set": {"name": name, "picture": picture}})
+        user_id = existing["id"]
+        plan = existing.get("plan", "free")
+        is_admin = existing.get("is_admin", False)
+        videos_this_month = existing.get("videos_this_month", 0)
+        created_at = existing.get("created_at", "")
+    else:
+        user_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        user_doc = {
+            "id": user_id,
+            "email": email,
+            "password_hash": "",
+            "name": name,
+            "picture": picture,
+            "plan": "free",
+            "plan_expires_at": None,
+            "videos_this_month": 0,
+            "videos_month_reset": now,
+            "is_admin": False,
+            "created_at": now,
+            "auth_provider": "google"
+        }
+        await db.users.insert_one(user_doc)
+        plan = "free"
+        is_admin = False
+        videos_this_month = 0
+        created_at = now
+    
+    token = create_token(user_id, email, is_admin)
+    return {
+        "token": token,
+        "user": {
+            "id": user_id, "email": email, "name": name, "picture": picture,
+            "plan": plan, "videos_this_month": videos_this_month,
+            "videos_limit": PLANS[plan]["videos_per_month"],
+            "is_admin": is_admin, "created_at": created_at
+        }
     }
 
 # ============================================================
