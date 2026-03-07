@@ -29,7 +29,7 @@ const Home = () => {
           <h1 className="logo-text" data-testid="app-logo">Affiliate Pro</h1>
           <h2 className="subtitle-text" data-testid="subtitle-text">EZ AD Creator</h2>
           <p className="tech-badge" data-testid="tech-badge">⚡ Powered by Sora 2 AI Technology</p>
-          <p className="branding-text cursive-font" data-testid="branding-text">Another development by Movius</p>
+          <p className="branding-text" data-testid="branding-text">Another development by <span className="movius-text">Movius</span></p>
         </div>
         
         <h2 className="hero-title" data-testid="hero-title">

@@ -174,13 +174,23 @@
 
 .branding-text {
   font-size: 1.1rem;
-  background: linear-gradient(90deg, #fbbf24 0%, #fb923c 50%, #f472b6 100%);
+  color: #94a3b8;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+
+.movius-text {
+  font-family: 'Dancing Script', cursive;
+  font-size: 3rem;
+  font-weight: 700;
+  display: inline-block;
+  background: linear-gradient(135deg, #fbbf24, #d4a017, #f5c842, #c8941e);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  font-style: italic;
+  filter: drop-shadow(0 2px 8px rgba(251, 191, 36, 0.3));
+  letter-spacing: 1px;
+  margin-left: 6px;
 }
 
 .cursive-font {
