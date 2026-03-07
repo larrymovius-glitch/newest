@@ -1,9 +1,19 @@
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Wand2, Video, History, FileText, Layers, Users, BarChart3, Calendar, Plus, Package, Key, Zap } from 'lucide-react';
-import { useEffect } from 'react';
+import { Sparkles, Wand2, Video, History, FileText, Layers, Users, BarChart3, Calendar, Plus, Package, Key, Zap, HelpCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { WelcomeTutorial } from '../components/WelcomeTutorial';
 
 const Home = () => {
   const navigate = useNavigate();
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  useEffect(() => {
+    // Check if user has seen the tutorial
+    const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
+    if (!hasSeenTutorial) {
+      setShowTutorial(true);
+    }
+  }, []);
 
   useEffect(() => {
     // Create animated particles
@@ -24,6 +34,22 @@ const Home = () => {
 
   return (
     <div className="hero-section">
+      {/* Welcome Tutorial for new users */}
+      {showTutorial && (
+        <WelcomeTutorial onClose={() => setShowTutorial(false)} />
+      )}
+
+      {/* Help button - always visible */}
+      <button
+        className="help-float-btn"
+        onClick={() => setShowTutorial(true)}
+        data-testid="help-button"
+        aria-label="Show tutorial"
+      >
+        <HelpCircle size={24} />
+        <span>How it Works</span>
+      </button>
+
       <div className="hero-content">
         <div className="logo-section">
           <h1 className="logo-text" data-testid="app-logo">Affiliate Pro</h1>

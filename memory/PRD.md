@@ -57,10 +57,18 @@ See `/app/INTEGRATION_GUIDE_V2.md` for copy-paste instructions to connect:
 ## Known External Issues
 - Custom domain `ezads.amhere4utoday.com` SSL/DNS - requires user action in GoDaddy and Emergent dashboard
 
+## Recently Added (Dec 2025)
+- Welcome Tutorial: 4-step interactive guide for new users
+  - Step 1: Welcome & overview
+  - Step 2: Add Your Product
+  - Step 3: Create Your Video  
+  - Step 4: Share & Earn
+- "How it Works" floating help button on home page
+- Tutorial shows automatically for first-time users, can be re-accessed anytime
+
 ## Backlog (Future)
 - P1: PayPal integration (user deferred)
 - P1: AI Voice-over (ElevenLabs) - UI exists, backend not implemented
-- P2: Tutorial/welcome video
 - P2: Refactor CSS monolith (App.css)
 - P2: Refactor backend into modular routers
 
