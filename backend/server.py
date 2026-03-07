@@ -400,9 +400,10 @@ async def stripe_webhook(request: Request):
 # ADMIN ENDPOINTS
 # ============================================================
 @api_router.get("/admin/users")
-async def admin_list_users(admin: dict = Depends(get_admin_user)):
-    users = await db.users.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", -1).to_list(500)
-    return {"users": users, "total": len(users)}
+async def admin_list_users(admin: dict = Depends(get_admin_user), page: int = 0, limit: int = 50):
+    users = await db.users.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", -1).skip(page * limit).limit(limit).to_list(limit)
+    total = await db.users.count_documents({})
+    return {"users": users, "total": total, "page": page, "limit": limit}
 
 @api_router.put("/admin/users/{user_id}/plan")
 async def admin_update_plan(user_id: str, plan: str, admin: dict = Depends(get_admin_user)):
@@ -442,21 +443,31 @@ async def admin_toggle_admin(user_id: str, admin: dict = Depends(get_admin_user)
 
 @api_router.get("/admin/revenue")
 async def admin_revenue(admin: dict = Depends(get_admin_user)):
-    paid_txns = await db.payment_transactions.find({"payment_status": "paid"}, {"_id": 0}).to_list(1000)
-    total_revenue = sum(t.get("amount", 0) for t in paid_txns)
+    # Use aggregation for efficient revenue calculation
+    revenue_pipeline = [
+        {"$match": {"payment_status": "paid"}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}, "count": {"$sum": 1}}}
+    ]
+    revenue_result = await db.payment_transactions.aggregate(revenue_pipeline).to_list(1)
+    total_revenue = revenue_result[0]["total"] if revenue_result else 0
+    txn_count = revenue_result[0]["count"] if revenue_result else 0
     
+    # Use aggregation for plan distribution
+    plan_pipeline = [{"$group": {"_id": "$plan", "count": {"$sum": 1}}}]
+    plan_result = await db.users.aggregate(plan_pipeline).to_list(10)
     plan_counts = {"free": 0, "pro": 0, "lifetime": 0}
-    users = await db.users.find({}, {"_id": 0, "plan": 1}).to_list(10000)
-    for u in users:
-        p = u.get("plan", "free")
-        if p in plan_counts:
-            plan_counts[p] += 1
+    for p in plan_result:
+        plan_id = p.get("_id", "free") or "free"
+        if plan_id in plan_counts:
+            plan_counts[plan_id] = p.get("count", 0)
+    
+    total_users = await db.users.count_documents({})
     
     return {
         "total_revenue": round(total_revenue, 2),
-        "transactions": len(paid_txns),
+        "transactions": txn_count,
         "plan_distribution": plan_counts,
-        "total_users": len(users)
+        "total_users": total_users
     }
 
 @api_router.get("/plans")
@@ -948,9 +959,9 @@ async def download_video(video_id: str):
     )
 
 @api_router.get("/videos", response_model=VideoHistory)
-async def get_videos():
-    """Get all videos history"""
-    videos = await db.videos.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+async def get_videos(page: int = 0, limit: int = 20):
+    """Get all videos history with pagination"""
+    videos = await db.videos.find({}, {"_id": 0}).sort("created_at", -1).skip(page * limit).limit(limit).to_list(limit)
     return VideoHistory(videos=[VideoResponse(**v) for v in videos])
 
 @api_router.post("/videos/{video_id}/share")
@@ -975,9 +986,9 @@ async def share_video(video_id: str, request: ShareVideoRequest):
     return {"message": "Video shared to gallery" if request.share_to_gallery else "Video removed from gallery"}
 
 @api_router.get("/gallery", response_model=VideoHistory)
-async def get_gallery():
-    """Get all shared videos in community gallery"""
-    videos = await db.videos.find({"shared": True, "status": "completed"}, {"_id": 0}).sort("created_at", -1).to_list(100)
+async def get_gallery(page: int = 0, limit: int = 20):
+    """Get all shared videos in community gallery with pagination"""
+    videos = await db.videos.find({"shared": True, "status": "completed"}, {"_id": 0}).sort("created_at", -1).skip(page * limit).limit(limit).to_list(limit)
     return VideoHistory(videos=[VideoResponse(**v) for v in videos])
 
 @api_router.post("/videos/{video_id}/like")
