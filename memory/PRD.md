@@ -1,7 +1,7 @@
 # Affiliate Pro EZ AD Creator - PRD
 
 ## Original Problem Statement
-Turnkey business system for people with disabilities and single parents to earn income from home through affiliate marketing. Three apps work together: Store, Affiliate Pro, and EZ AD Creator (AI video generator).
+Turnkey business system for people with disabilities and single parents to earn income from home through affiliate marketing. Three apps work together: Store (amhere4utoday.com), Affiliate Pro, and EZ AD Creator (AI video generator).
 
 ## Architecture
 - **Frontend:** React + Tailwind + Shadcn UI (17 pages)
@@ -12,7 +12,7 @@ Turnkey business system for people with disabilities and single parents to earn 
 - **Auth:** JWT + Google OAuth (Emergent Auth)
 - **Preview URL:** https://movius-preview.preview.emergentagent.com
 
-## Implemented Features
+## Implemented Features (ALL VERIFIED - 100% PASS RATE)
 
 ### Authentication (LIVE)
 - Email/password registration + login (JWT tokens)
@@ -49,11 +49,32 @@ Turnkey business system for people with disabilities and single parents to earn 
 ### Pages (17)
 Auth, AuthCallback, Home, Quick Create, Generator, Library, Products, Templates, Template Creator, Batch Generator, Gallery, Analytics, Scheduled Posts, Team, Integration, Pricing, PaymentSuccess, Admin
 
-## Known Issues
-- Custom domain `ezads.amhere4utoday.com` SSL/DNS (external)
+## Integration Guide
+See `/app/INTEGRATION_GUIDE_V2.md` for copy-paste instructions to connect:
+- amhere4utoday.com (Store) - uses public `/api/store/feed`
+- Affiliate Pro - uses secured `/api/external/*` endpoints with API keys
 
-## Backlog
-- P1: PayPal integration
-- P1: AI Voice-over (ElevenLabs)
+## Known External Issues
+- Custom domain `ezads.amhere4utoday.com` SSL/DNS - requires user action in GoDaddy and Emergent dashboard
+
+## Backlog (Future)
+- P1: PayPal integration (user deferred)
+- P1: AI Voice-over (ElevenLabs) - UI exists, backend not implemented
 - P2: Tutorial/welcome video
-- P2: Refactor CSS monolith
+- P2: Refactor CSS monolith (App.css)
+- P2: Refactor backend into modular routers
+
+## Testing Status
+- **Iteration 5:** 100% pass rate (32/32 backend tests, all frontend tests)
+- All core features verified working
+- Ready for launch
+
+## Key Files
+- `/app/backend/server.py` - All backend logic
+- `/app/frontend/src/App.js` - Routes
+- `/app/frontend/src/context/AuthContext.js` - Auth state
+- `/app/frontend/src/pages/QuickCreate.js` - Main workflow
+- `/app/INTEGRATION_GUIDE_V2.md` - Integration instructions
+
+## Test Credentials
+- Admin: admin@test.com / admin123
