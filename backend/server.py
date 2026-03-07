@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Depends, Header
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Depends, Header, Request
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -16,6 +16,9 @@ import resend
 
 sys.path.insert(0, os.path.abspath(''))
 from emergentintegrations.llm.openai.video_generation import OpenAIVideoGeneration
+from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+import bcrypt
+import jwt
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -23,6 +26,10 @@ load_dotenv(ROOT_DIR / '.env')
 # Initialize Resend
 resend.api_key = os.environ.get('RESEND_API_KEY')
 SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+
+# JWT config
+JWT_SECRET = os.environ.get('JWT_SECRET')
+JWT_ALGORITHM = "HS256"
 
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
@@ -33,6 +40,362 @@ api_router = APIRouter(prefix="/api")
 
 VIDEO_OUTPUT_DIR = Path("/app/backend/generated_videos")
 VIDEO_OUTPUT_DIR.mkdir(exist_ok=True)
+
+# ============================================================
+# PLAN DEFINITIONS (server-side only — never trust frontend)
+# ============================================================
+PLANS = {
+    "free": {"name": "Free", "price": 0, "videos_per_month": 4, "templates": "basic"},
+    "pro": {"name": "Pro", "price": 9.99, "videos_per_month": 999999, "templates": "all"},
+    "lifetime": {"name": "Lifetime", "price": 19.99, "videos_per_month": 999999, "templates": "all"},
+}
+
+# ============================================================
+# AUTH MODELS
+# ============================================================
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+    name: str = ""
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class UserResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    email: str
+    name: str
+    plan: str
+    videos_this_month: int
+    videos_limit: int
+    is_admin: bool
+    created_at: str
+
+# ============================================================
+# AUTH HELPERS
+# ============================================================
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode(), hashed.encode())
+
+def create_token(user_id: str, email: str, is_admin: bool = False) -> str:
+    payload = {
+        "user_id": user_id,
+        "email": email,
+        "is_admin": is_admin,
+        "exp": datetime.now(timezone.utc) + timedelta(days=30)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+async def get_current_user(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    token = authorization.split(" ")[1]
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
+
+async def get_admin_user(authorization: str = Header(None)):
+    user = await get_current_user(authorization)
+    if not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
+async def check_video_limit(user: dict):
+    """Check if user has exceeded their monthly video limit"""
+    plan = user.get("plan", "free")
+    limit = PLANS[plan]["videos_per_month"]
+    
+    # Reset monthly count if new month
+    now = datetime.now(timezone.utc)
+    reset_date = user.get("videos_month_reset", "")
+    if reset_date:
+        try:
+            reset_dt = datetime.fromisoformat(reset_date)
+            if now.month != reset_dt.month or now.year != reset_dt.year:
+                await db.users.update_one({"id": user["id"]}, {"$set": {
+                    "videos_this_month": 0,
+                    "videos_month_reset": now.isoformat()
+                }})
+                user["videos_this_month"] = 0
+        except (ValueError, TypeError):
+            pass
+    
+    if user.get("videos_this_month", 0) >= limit:
+        raise HTTPException(status_code=403, detail=f"Monthly video limit reached ({limit} videos). Upgrade your plan for more.")
+
+# ============================================================
+# AUTH ENDPOINTS
+# ============================================================
+@api_router.post("/auth/register")
+async def register(request: RegisterRequest):
+    existing = await db.users.find_one({"email": request.email.lower()})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    user_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    user_doc = {
+        "id": user_id,
+        "email": request.email.lower(),
+        "password_hash": hash_password(request.password),
+        "name": request.name or request.email.split("@")[0],
+        "plan": "free",
+        "plan_expires_at": None,
+        "videos_this_month": 0,
+        "videos_month_reset": now,
+        "is_admin": False,
+        "created_at": now
+    }
+    await db.users.insert_one(user_doc)
+    
+    token = create_token(user_id, request.email.lower())
+    return {
+        "token": token,
+        "user": {
+            "id": user_id, "email": request.email.lower(), "name": user_doc["name"],
+            "plan": "free", "videos_this_month": 0, "videos_limit": PLANS["free"]["videos_per_month"],
+            "is_admin": False, "created_at": now
+        }
+    }
+
+@api_router.post("/auth/login")
+async def login(request: LoginRequest):
+    user = await db.users.find_one({"email": request.email.lower()}, {"_id": 0})
+    if not user or not verify_password(request.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    token = create_token(user["id"], user["email"], user.get("is_admin", False))
+    plan = user.get("plan", "free")
+    return {
+        "token": token,
+        "user": {
+            "id": user["id"], "email": user["email"], "name": user.get("name", ""),
+            "plan": plan, "videos_this_month": user.get("videos_this_month", 0),
+            "videos_limit": PLANS[plan]["videos_per_month"],
+            "is_admin": user.get("is_admin", False), "created_at": user.get("created_at", "")
+        }
+    }
+
+@api_router.get("/auth/me")
+async def get_me(user: dict = Depends(get_current_user)):
+    plan = user.get("plan", "free")
+    return {
+        "id": user["id"], "email": user["email"], "name": user.get("name", ""),
+        "plan": plan, "videos_this_month": user.get("videos_this_month", 0),
+        "videos_limit": PLANS[plan]["videos_per_month"],
+        "is_admin": user.get("is_admin", False), "created_at": user.get("created_at", "")
+    }
+
+# ============================================================
+# STRIPE CHECKOUT ENDPOINTS
+# ============================================================
+@api_router.post("/checkout/create")
+async def create_checkout(plan_id: str, request: Request, user: dict = Depends(get_current_user)):
+    if plan_id not in ("pro", "lifetime"):
+        raise HTTPException(status_code=400, detail="Invalid plan")
+    
+    amount = PLANS[plan_id]["price"]
+    host_url = str(request.base_url).rstrip("/")
+    origin_url = request.headers.get("origin", host_url)
+    
+    webhook_url = f"{host_url}api/webhook/stripe"
+    stripe_checkout = StripeCheckout(
+        api_key=os.environ['STRIPE_API_KEY'],
+        webhook_url=webhook_url
+    )
+    
+    success_url = f"{origin_url}/payment-success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{origin_url}/pricing"
+    
+    checkout_request = CheckoutSessionRequest(
+        amount=float(amount),
+        currency="usd",
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata={
+            "user_id": user["id"],
+            "user_email": user["email"],
+            "plan_id": plan_id
+        }
+    )
+    
+    session = await stripe_checkout.create_checkout_session(checkout_request)
+    
+    # Record transaction
+    await db.payment_transactions.insert_one({
+        "session_id": session.session_id,
+        "user_id": user["id"],
+        "email": user["email"],
+        "plan_id": plan_id,
+        "amount": amount,
+        "currency": "usd",
+        "payment_status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"url": session.url, "session_id": session.session_id}
+
+@api_router.get("/checkout/status/{session_id}")
+async def check_checkout_status(session_id: str, request: Request, user: dict = Depends(get_current_user)):
+    host_url = str(request.base_url).rstrip("/")
+    webhook_url = f"{host_url}api/webhook/stripe"
+    stripe_checkout = StripeCheckout(
+        api_key=os.environ['STRIPE_API_KEY'],
+        webhook_url=webhook_url
+    )
+    
+    status = await stripe_checkout.get_checkout_status(session_id)
+    
+    # Update transaction
+    txn = await db.payment_transactions.find_one({"session_id": session_id})
+    if txn and txn.get("payment_status") != "paid":
+        await db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {"$set": {
+                "payment_status": status.payment_status,
+                "status": status.status,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        # If paid, upgrade user plan
+        if status.payment_status == "paid":
+            plan_id = txn.get("plan_id", "pro")
+            update_fields = {"plan": plan_id}
+            if plan_id == "pro":
+                update_fields["plan_expires_at"] = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+            
+            await db.users.update_one(
+                {"id": txn["user_id"]},
+                {"$set": update_fields}
+            )
+    
+    return {
+        "status": status.status,
+        "payment_status": status.payment_status,
+        "amount_total": status.amount_total,
+        "currency": status.currency
+    }
+
+@api_router.post("/webhook/stripe")
+async def stripe_webhook(request: Request):
+    body = await request.body()
+    signature = request.headers.get("Stripe-Signature", "")
+    
+    host_url = str(request.base_url).rstrip("/")
+    webhook_url = f"{host_url}api/webhook/stripe"
+    stripe_checkout = StripeCheckout(
+        api_key=os.environ['STRIPE_API_KEY'],
+        webhook_url=webhook_url
+    )
+    
+    try:
+        event = await stripe_checkout.handle_webhook(body, signature)
+        
+        if event.payment_status == "paid" and event.session_id:
+            txn = await db.payment_transactions.find_one({"session_id": event.session_id})
+            if txn and txn.get("payment_status") != "paid":
+                await db.payment_transactions.update_one(
+                    {"session_id": event.session_id},
+                    {"$set": {"payment_status": "paid", "updated_at": datetime.now(timezone.utc).isoformat()}}
+                )
+                plan_id = event.metadata.get("plan_id", "pro")
+                update_fields = {"plan": plan_id}
+                if plan_id == "pro":
+                    update_fields["plan_expires_at"] = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+                await db.users.update_one({"id": txn["user_id"]}, {"$set": update_fields})
+        
+        return {"status": "ok"}
+    except Exception as e:
+        logging.error(f"Webhook error: {str(e)}")
+        return {"status": "error"}
+
+# ============================================================
+# ADMIN ENDPOINTS
+# ============================================================
+@api_router.get("/admin/users")
+async def admin_list_users(admin: dict = Depends(get_admin_user)):
+    users = await db.users.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", -1).to_list(500)
+    return {"users": users, "total": len(users)}
+
+@api_router.put("/admin/users/{user_id}/plan")
+async def admin_update_plan(user_id: str, plan: str, admin: dict = Depends(get_admin_user)):
+    if plan not in PLANS:
+        raise HTTPException(status_code=400, detail="Invalid plan")
+    
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    update_fields = {"plan": plan}
+    if plan == "pro":
+        update_fields["plan_expires_at"] = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+    elif plan == "lifetime":
+        update_fields["plan_expires_at"] = None
+    elif plan == "free":
+        update_fields["plan_expires_at"] = None
+    
+    await db.users.update_one({"id": user_id}, {"$set": update_fields})
+    return {"message": f"User plan updated to {plan}"}
+
+@api_router.delete("/admin/users/{user_id}")
+async def admin_delete_user(user_id: str, admin: dict = Depends(get_admin_user)):
+    result = await db.users.delete_one({"id": user_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"message": "User deleted"}
+
+@api_router.put("/admin/users/{user_id}/toggle-admin")
+async def admin_toggle_admin(user_id: str, admin: dict = Depends(get_admin_user)):
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    new_admin = not user.get("is_admin", False)
+    await db.users.update_one({"id": user_id}, {"$set": {"is_admin": new_admin}})
+    return {"message": f"Admin status: {new_admin}"}
+
+@api_router.get("/admin/revenue")
+async def admin_revenue(admin: dict = Depends(get_admin_user)):
+    paid_txns = await db.payment_transactions.find({"payment_status": "paid"}, {"_id": 0}).to_list(1000)
+    total_revenue = sum(t.get("amount", 0) for t in paid_txns)
+    
+    plan_counts = {"free": 0, "pro": 0, "lifetime": 0}
+    users = await db.users.find({}, {"_id": 0, "plan": 1}).to_list(10000)
+    for u in users:
+        p = u.get("plan", "free")
+        if p in plan_counts:
+            plan_counts[p] += 1
+    
+    return {
+        "total_revenue": round(total_revenue, 2),
+        "transactions": len(paid_txns),
+        "plan_distribution": plan_counts,
+        "total_users": len(users)
+    }
+
+@api_router.get("/plans")
+async def get_plans():
+    """Public endpoint for pricing page"""
+    return {
+        "plans": [
+            {"id": "free", "name": "Free", "price": 0, "period": "", "features": ["4 videos per month", "Basic templates", "HD resolution", "Community gallery"]},
+            {"id": "pro", "name": "Pro", "price": 9.99, "period": "/month", "features": ["Unlimited videos", "All templates", "All resolutions", "Email notifications", "Priority generation", "Batch generation"]},
+            {"id": "lifetime", "name": "Lifetime", "price": 19.99, "period": "one-time", "features": ["Everything in Pro", "Forever access", "No monthly payments", "Future features included", "Priority support"]},
+        ]
+    }
 
 class VideoRequest(BaseModel):
     prompt: str
@@ -386,8 +749,24 @@ async def delete_template(template_id: str):
     return {"message": "Template deleted successfully"}
 
 @api_router.post("/videos/generate", response_model=VideoResponse)
-async def generate_video(request: VideoRequest, background_tasks: BackgroundTasks):
+async def generate_video(request: VideoRequest, background_tasks: BackgroundTasks, authorization: str = Header(None)):
     """Generate a video from text prompt"""
+    user_id = "default_user"
+    
+    # If authenticated, check video limits
+    if authorization and authorization.startswith("Bearer "):
+        try:
+            user = await get_current_user(authorization)
+            await check_video_limit(user)
+            user_id = user["id"]
+            # Increment video count
+            await db.users.update_one(
+                {"id": user["id"]},
+                {"$inc": {"videos_this_month": 1}}
+            )
+        except HTTPException:
+            pass  # Allow unauthenticated usage for now
+    
     video_id = str(uuid.uuid4())
     
     video_doc = {
@@ -404,7 +783,7 @@ async def generate_video(request: VideoRequest, background_tasks: BackgroundTask
         "likes": 0,
         "views": 0,
         "shares": 0,
-        "user_id": "default_user",
+        "user_id": user_id,
         "notify_email": request.notify_email
     }
     
