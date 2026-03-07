@@ -10,7 +10,7 @@ Turnkey business system for people with disabilities and single parents to earn 
 - **Payments:** Stripe (LIVE key)
 - **Email:** Resend
 - **Auth:** JWT + Google OAuth (Emergent Auth)
-- **Preview URL:** https://ad-creator-hub-4.preview.emergentagent.com
+- **Preview URL:** https://movius-preview.preview.emergentagent.com
 
 ## Implemented Features
 

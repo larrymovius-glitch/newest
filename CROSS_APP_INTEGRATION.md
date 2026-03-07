@@ -27,7 +27,7 @@ EZ AD Creator (Central Hub)
 ### Store Feed Endpoint (PUBLIC — no authentication needed):
 
 ```
-GET https://ad-creator-hub-4.preview.emergentagent.com/api/store/feed
+GET https://movius-preview.preview.emergentagent.com/api/store/feed
 ```
 
 ### Response Format:
@@ -64,11 +64,11 @@ GET https://ad-creator-hub-4.preview.emergentagent.com/api/store/feed
 2. Display each product as a store item (name, description, price)
 3. The `affiliate_link` is the "Buy Now" button destination
 4. If `promo_videos` exist, embed them on the product page
-5. Video download URL: `https://ad-creator-hub-4.preview.emergentagent.com{video_url}`
+5. Video download URL: `https://movius-preview.preview.emergentagent.com{video_url}`
 
 ### Single product endpoint:
 ```
-GET https://ad-creator-hub-4.preview.emergentagent.com/api/store/feed/{product_id}
+GET https://movius-preview.preview.emergentagent.com/api/store/feed/{product_id}
 ```
 
 ---
@@ -87,13 +87,13 @@ The key goes in the `X-API-Key` header of every request.
 
 #### Read Products
 ```
-GET https://ad-creator-hub-4.preview.emergentagent.com/api/external/products
+GET https://movius-preview.preview.emergentagent.com/api/external/products
 Headers: X-API-Key: ezad-xxxxxxxxxxxxx
 ```
 
 #### Create a Product (auto-publishes to store)
 ```
-POST https://ad-creator-hub-4.preview.emergentagent.com/api/external/products
+POST https://movius-preview.preview.emergentagent.com/api/external/products
 Headers: 
   X-API-Key: ezad-xxxxxxxxxxxxx
   Content-Type: application/json
@@ -108,7 +108,7 @@ Body: {
 
 #### Read Completed Videos
 ```
-GET https://ad-creator-hub-4.preview.emergentagent.com/api/external/videos
+GET https://movius-preview.preview.emergentagent.com/api/external/videos
 Headers: X-API-Key: ezad-xxxxxxxxxxxxx
 ```
 
@@ -123,18 +123,18 @@ Headers: X-API-Key: ezad-xxxxxxxxxxxxx
 
 ### Test Store Feed (no auth):
 ```bash
-curl https://ad-creator-hub-4.preview.emergentagent.com/api/store/feed
+curl https://movius-preview.preview.emergentagent.com/api/store/feed
 ```
 
 ### Test External API (with auth):
 ```bash
-curl https://ad-creator-hub-4.preview.emergentagent.com/api/external/products \
+curl https://movius-preview.preview.emergentagent.com/api/external/products \
   -H "X-API-Key: YOUR_KEY_HERE"
 ```
 
 ### Create Product from Affiliate Pro:
 ```bash
-curl -X POST https://ad-creator-hub-4.preview.emergentagent.com/api/external/products \
+curl -X POST https://movius-preview.preview.emergentagent.com/api/external/products \
   -H "X-API-Key: YOUR_KEY_HERE" \
   -H "Content-Type: application/json" \
   -d '{"name":"My Product","description":"Great product","affiliate_link":"https://example.com","price":19.99}'
