@@ -680,9 +680,14 @@ async def send_video_notification(email: str, video_id: str, prompt: str, status
     if not email or not resend.api_key:
         return
     
-    app_url = os.environ.get('CORS_ORIGINS', 'https://movius-preview.preview.emergentagent.com').split(',')[0].strip()
-    if app_url == '*':
-        app_url = 'https://movius-preview.preview.emergentagent.com'
+    # Get the frontend URL from environment
+    app_url = os.environ.get('FRONTEND_URL', '')
+    if not app_url:
+        cors_origins = os.environ.get('CORS_ORIGINS', '')
+        if cors_origins and cors_origins != '*':
+            app_url = cors_origins.split(',')[0].strip()
+        else:
+            app_url = 'https://ezads.amhere4utoday.com'
     
     if status == 'completed':
         subject = "Your Video is Ready!"
