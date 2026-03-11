@@ -21,6 +21,8 @@ import AuthCallback from "./pages/AuthCallback";
 import Pricing from "./pages/Pricing";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import Admin from "./pages/Admin";
+import LearnAffiliate from "./pages/LearnAffiliate";
+import AnyAdPro from "./pages/AnyAdPro";
 import "./App.css";
 
 function App() {
@@ -52,6 +54,8 @@ function App() {
             <Route path="/integration" element={<ProtectedRoute><Integration /></ProtectedRoute>} />
             <Route path="/quick-create" element={<ProtectedRoute><QuickCreate /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+            <Route path="/learn" element={<ProtectedRoute><LearnAffiliate /></ProtectedRoute>} />
+            <Route path="/anyadpro" element={<ProtectedRoute><AnyAdPro /></ProtectedRoute>} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>

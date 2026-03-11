@@ -49,6 +49,8 @@ PLANS = {
     "free": {"name": "Free", "price": 0, "videos_per_month": 4, "templates": "basic"},
     "pro": {"name": "Pro", "price": 9.99, "videos_per_month": 999999, "templates": "all"},
     "lifetime": {"name": "Lifetime", "price": 19.99, "videos_per_month": 999999, "templates": "all"},
+    "anyadpro": {"name": "AnyAdPro Monthly", "price": 4.99, "videos_per_month": 999999, "templates": "all"},
+    "anyadpro_lifetime": {"name": "AnyAdPro Lifetime", "price": 19.00, "videos_per_month": 999999, "templates": "all"},
 }
 
 # ============================================================
@@ -196,9 +198,10 @@ async def get_me(user: dict = Depends(get_current_user)):
     return {
         "id": user["id"], "email": user["email"], "name": user.get("name", ""),
         "plan": plan, "videos_this_month": user.get("videos_this_month", 0),
-        "videos_limit": PLANS[plan]["videos_per_month"],
+        "videos_limit": PLANS.get(plan, PLANS["free"])["videos_per_month"],
         "is_admin": user.get("is_admin", False), "created_at": user.get("created_at", ""),
-        "picture": user.get("picture", "")
+        "picture": user.get("picture", ""),
+        "anyadpro_access": user.get("anyadpro_access", False)
     }
 
 # ============================================================
@@ -277,7 +280,7 @@ async def google_callback(request: GoogleCallbackRequest):
 # ============================================================
 @api_router.post("/checkout/create")
 async def create_checkout(plan_id: str, request: Request, user: dict = Depends(get_current_user)):
-    if plan_id not in ("pro", "lifetime"):
+    if plan_id not in ("pro", "lifetime", "anyadpro", "anyadpro_lifetime"):
         raise HTTPException(status_code=400, detail="Invalid plan")
     
     amount = PLANS[plan_id]["price"]
@@ -350,6 +353,12 @@ async def check_checkout_status(session_id: str, request: Request, user: dict = 
             update_fields = {"plan": plan_id}
             if plan_id == "pro":
                 update_fields["plan_expires_at"] = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+            elif plan_id == "anyadpro":
+                update_fields["anyadpro_access"] = True
+                update_fields["anyadpro_expires_at"] = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+            elif plan_id == "anyadpro_lifetime":
+                update_fields["anyadpro_access"] = True
+                update_fields["anyadpro_expires_at"] = None
             
             await db.users.update_one(
                 {"id": txn["user_id"]},

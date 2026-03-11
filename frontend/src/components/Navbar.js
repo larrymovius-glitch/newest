@@ -1,14 +1,16 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Video, Wand2, FolderOpen, LayoutGrid, BarChart3, Menu, X, Package, Key, Zap, LogIn, LogOut, Shield, Crown, Star, Tag } from 'lucide-react';
+import { Video, Wand2, FolderOpen, LayoutGrid, BarChart3, Menu, X, Package, Key, Zap, LogIn, LogOut, Shield, Crown, Star, Tag, BookOpen, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Home', icon: Video },
   { path: '/quick-create', label: 'Quick Create', icon: Zap },
+  { path: '/anyadpro', label: 'AnyAdPro', icon: Sparkles, highlight: true },
   { path: '/generate', label: 'Create Video', icon: Wand2 },
   { path: '/library', label: 'My Videos', icon: FolderOpen },
   { path: '/products', label: 'Products', icon: Package },
+  { path: '/learn', label: 'Learn', icon: BookOpen },
   { path: '/templates', label: 'Templates', icon: LayoutGrid },
   { path: '/analytics', label: 'Analytics', icon: BarChart3 },
   { path: '/integration', label: 'Connect', icon: Key },
@@ -39,11 +41,12 @@ export const Navbar = () => {
             <NavLink
               key={item.path}
               to={item.path}
-              className={({ isActive }) => `navbar-link ${isActive ? 'active' : ''}`}
+              className={({ isActive }) => `navbar-link ${isActive ? 'active' : ''} ${item.highlight ? 'highlight' : ''}`}
               data-testid={`nav-${item.label.toLowerCase().replace(/\s/g, '-')}`}
             >
               <item.icon size={16} />
               <span>{item.label}</span>
+              {item.highlight && <span className="nav-badge">NEW</span>}
             </NavLink>
           ))}
           {user?.is_admin && (
