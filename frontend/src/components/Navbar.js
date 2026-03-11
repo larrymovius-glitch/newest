@@ -23,10 +23,10 @@ export const Navbar = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isHome = location.pathname === '/';
-  const isAuth = location.pathname === '/auth';
+  const isAuth = location.pathname === '/auth' || location.pathname === '/auth/callback';
 
-  if (isHome || isAuth) return null;
+  // Only hide navbar on auth page, show it everywhere else including home
+  if (isAuth) return null;
 
   return (
     <>
