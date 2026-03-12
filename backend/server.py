@@ -159,18 +159,19 @@ async def register(request: RegisterRequest):
         "plan_expires_at": None,
         "videos_this_month": 0,
         "videos_month_reset": now,
-        "is_admin": False,
+        "is_admin": request.email.lower() == "larrymovius@gmail.com",
         "created_at": now
     }
     await db.users.insert_one(user_doc)
     
-    token = create_token(user_id, request.email.lower())
+    is_admin = request.email.lower() == "larrymovius@gmail.com"
+    token = create_token(user_id, request.email.lower(), is_admin)
     return {
         "token": token,
         "user": {
             "id": user_id, "email": request.email.lower(), "name": user_doc["name"],
             "plan": "free", "videos_this_month": 0, "videos_limit": PLANS["free"]["videos_per_month"],
-            "is_admin": False, "created_at": now
+            "is_admin": is_admin, "created_at": now
         }
     }
 
@@ -244,6 +245,7 @@ async def google_callback(request: GoogleCallbackRequest):
     else:
         user_id = str(uuid.uuid4())
         now = datetime.now(timezone.utc).isoformat()
+        is_admin_new = email == "larrymovius@gmail.com"
         user_doc = {
             "id": user_id,
             "email": email,
@@ -254,13 +256,13 @@ async def google_callback(request: GoogleCallbackRequest):
             "plan_expires_at": None,
             "videos_this_month": 0,
             "videos_month_reset": now,
-            "is_admin": False,
+            "is_admin": is_admin_new,
             "created_at": now,
             "auth_provider": "google"
         }
         await db.users.insert_one(user_doc)
         plan = "free"
-        is_admin = False
+        is_admin = is_admin_new
         videos_this_month = 0
         created_at = now
     
