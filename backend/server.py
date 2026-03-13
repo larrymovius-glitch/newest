@@ -139,6 +139,25 @@ async def check_video_limit(user: dict):
     if user.get("videos_this_month", 0) >= limit:
         raise HTTPException(status_code=403, detail=f"Monthly video limit reached ({limit} videos). Upgrade your plan for more.")
 
+
+# ============================================================
+# ADMIN BOOTSTRAP (one-time setup endpoint)
+# ============================================================
+@api_router.post("/auth/bootstrap-admin")
+async def bootstrap_admin(email: str = "larrymovius@gmail.com"):
+    """One-time endpoint to make owner an admin"""
+    result = await db.users.update_one(
+        {"email": email.lower()},
+        {"$set": {"is_admin": True}}
+    )
+    if result.modified_count > 0:
+        return {"message": f"Success! {email} is now an admin", "modified": True}
+    elif result.matched_count > 0:
+        return {"message": f"{email} was already an admin", "modified": False}
+    else:
+        return {"message": f"User {email} not found", "modified": False}
+
+
 # ============================================================
 # AUTH ENDPOINTS
 # ============================================================
