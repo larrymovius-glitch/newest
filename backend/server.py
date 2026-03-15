@@ -680,7 +680,9 @@ TEMPLATES = [
 
 def _generate_video_sync(video_id: str, prompt: str, model: str, size: str, duration: int):
     """Synchronous video generation - runs in thread pool"""
-    video_gen = OpenAIVideoGeneration(api_key=os.environ['EMERGENT_LLM_KEY'])
+    # Use OpenAI key if available, otherwise fall back to Emergent key
+    api_key = os.environ.get('OPENAI_API_KEY') or os.environ.get('EMERGENT_LLM_KEY')
+    video_gen = OpenAIVideoGeneration(api_key=api_key)
     output_path = str(VIDEO_OUTPUT_DIR / f"{video_id}.mp4")
     
     video_bytes = video_gen.text_to_video(
